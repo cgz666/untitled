@@ -1,7 +1,9 @@
 import os
+import pandas as pd
 
 # 假设你的文件位于当前目录下的'files'文件夹中
 folder_path = r'F:\untitled\experimental_data\xls'
+output_folder = r'F:\untitled\experimental_data\output'  # 输出文件夹路径
 
 # 获取文件夹内所有文件的名称
 file_names = os.listdir(folder_path)
@@ -18,6 +20,11 @@ for file_name in file_names:
             id = parts[0] + '-' + parts[1] + '-' + parts[2]
             ids.append(id)
 
-# 打印提取出的编号
-for id in ids:
-    print(id)
+# 创建一个DataFrame
+df = pd.DataFrame(ids, columns=['ID'])
+
+# 将DataFrame保存到CSV文件
+output_file_path = os.path.join(output_folder, 'extracted_ids.csv')  # 输出文件路径
+df.to_csv(output_file_path, index=False)  # 不保存行索引
+
+print(f"提取的编号已保存到 {output_file_path}")

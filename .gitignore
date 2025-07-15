@@ -1,0 +1,48 @@
+# 忽略 Python 编译文件
+*.pyc
+__pycache__/
+
+# 忽略虚拟环境
+dist/
+build/
+chrome-win64/
+venv/
+*.exe
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.zip
+*.png
+*.ini
+LICENSE.chromedriver
+# 忽略 Jupyter Notebook 检查点
+.ipynb_checkpoints/
+
+# 忽略日志文件
+*.log
+
+# 忽略环境变量文件
+.env
+
+# 忽略系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略 IDE 配置文件
+.vscode/
+.idea/
+
+# 忽略测试报告文件
+coverage.xml
+htmlcov/
+
+# 忽略特定文件
+environment_script/data_spider/chrome-win64/chrome.dll
+F:\untitled\environment_script\data_spider\xls\模板.xlsx
+F:\untitled\environment_script\data_spider\output\委托备案数据与环保厅备案数据匹配情况统计-结果.xlsx
+Map_script/chrome-win64
+records_exe4\main.dist\main.exe
+records_script/data_spider/chrome-win64
+test
+weather_script/data_spider/chrome-win64

@@ -221,7 +221,6 @@ class user_spider():
                         break
                     page += 1
 
-                    # 添加延时避免请求过快
                     time.sleep(0.5)
 
                 except requests.exceptions.RequestException as e:
@@ -229,15 +228,12 @@ class user_spider():
                     break
 
         # 保存匹配后的数据到文件
-        if all_matched_data:
-            df = pd.DataFrame(all_matched_data)
-            df.to_excel(self.output_name, index=False, sheet_name="设备信息")
-            print(f"匹配后的设备信息已保存到 {self.output_name}，共保存 {len(all_matched_data)} 条记录")
-        else:
-            print("没有找到匹配的设备信息")
+        df = pd.DataFrame(all_matched_data)
+        df.to_excel(self.output_name, index=False, sheet_name="设备信息")
+        print(f"匹配后的设备信息已保存到 {self.output_name}，共保存 {len(all_matched_data)} 条记录")
+
 
     def main(self):
-        """主方法"""
         # user_ids = self.spider_id()
         # self.spider_user(user_ids)
         self.spider_dev()

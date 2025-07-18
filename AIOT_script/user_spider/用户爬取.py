@@ -232,7 +232,6 @@ class user_spider():
         df.to_excel(self.output_name, index=False, sheet_name="设备信息")
         print(f"匹配后的设备信息已保存到 {self.output_name}，共保存 {len(all_matched_data)} 条记录")
 
-
     def main(self):
         # user_ids = self.spider_id()
         # self.spider_user(user_ids)

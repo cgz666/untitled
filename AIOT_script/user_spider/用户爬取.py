@@ -125,7 +125,6 @@ class user_spider():
                 response = requests.post(url=self.url3, headers=self.headers, json=params)
                 response.raise_for_status()  # 检查请求是否成功
                 response_data = response.json()
-
                 rows = response_data.get("rows", [])
                 for row in rows:
                     chartered_airplane_name = row.get("charteredAirplaneName", "")
@@ -154,13 +153,11 @@ class user_spider():
         df = pd.DataFrame(all_matched_data)
         df.to_excel(self.output_name, index=False, sheet_name="设备信息")
         print(f"匹配后的设备信息已保存到 {self.output_name}，共保存 {len(all_matched_data)} 条记录")
-
     def main(self):
         user_ids = self.spider_id()
         user_info = self.spider_user(user_ids)
         print("用户信息（用户名：电话号码）：")
         print(user_info)
         self.spider_dev(user_info)
-
 if __name__ == "__main__":
     user_spider().main()

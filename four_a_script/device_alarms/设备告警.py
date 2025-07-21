@@ -7,7 +7,7 @@ import os
 class device_alarms():
     def __init__(self):
         # 获取Cookie
-        cookie_url = "http://clound.gxtower.cn:3980/tt/get_aiot_cookie"
+        cookie_url = "http://clound.gxtower.cn:3980/tt/get_aiot_cookie?id=2"
         res = requests.get(cookie_url)
         cookie = res.text.strip()
         print(cookie)

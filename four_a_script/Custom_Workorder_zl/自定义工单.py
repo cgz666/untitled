@@ -12,7 +12,6 @@ class Custom_Workorder():
         cookie_str = res.text.strip()
         cookie_dict = json.loads(cookie_str)
         cookie_header = "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
-
         self.base_url = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/exportExcel"
         self.headers = {
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",

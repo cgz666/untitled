@@ -1,27 +1,26 @@
 import requests
 import json
-import pythoncom
 import pandas as pd
-import win32com.client as win32
+import time
 import os
 
 class device_alarms():
     def __init__(self):
-        cookie_url = "http://10.19.6.250:5000/get_4a_cookie"
+        # 获取Cookie
+        cookie_url = "http://clound.gxtower.cn:3980/tt/get_aiot_cookie"
         res = requests.get(cookie_url)
-        cookie_str = res.text.strip()
-        cookie_dict = json.loads(cookie_str)
-        cookie_header = "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
+        cookie = res.text.strip()
+        print(cookie)
+        # 基础配置 - 区分活动告警和历史告警URL
+        self.active_url = "https://zlzywg.chinatowercom.cn:8070/api/semp/sempAlarm/queryAlarmActive"  # 活动告警（0）
+        self.history_url = "https://zlzywg.chinatowercom.cn:8070/api/semp/sempAlarm/queryAlarmHistory"  # 历史告警（1/2）
 
-        self.base_url = "https://zlzywg.chinatowercom.cn:8070/api/semp/sempAlarm/queryAlarmActive"
         self.headers = {
             "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-            "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiIl0sInVzZXJfbmFtZSI6IndlYl9tYW5hZ2V8d3gtaHVhbmd3bDE0Iiwic2NvcGUiOlsiYWxsIl0sImV4cCI6MTc1MjkxNTY2MCwidXNlcklkIjoxMTM0NzEzLCJqdGkiOiJXNlRmOWRsZWd3dUdWbkk1LS1nUFo1S2ZILVkiLCJjbGllbnRfaWQiOiJ3ZWJfbWFuYWdlIn0.O75PPlwDQ4HlDidUb1HuzEUQp6QhYQylV8sjz2YabzBlWBpyvFUIrQJ3mdvS94oE2-JGo3KSevRhbUwYywHSQtsA96qTzWhNhfxyuAr1_nzAkV9vvvmc7C1E-pylLf2YJbX9exqo97ykAIHn0QeAJftkE_uzFH6m8admyvpuTK7t2sPfC_6KtuM7hlIyePGhGM0KMKsxpyBPGHOcKodzOmrnTKncs_fMmuhivxLJ9Kx-WUkugLlzShMvzTsvAwM51-iHnoitxxRhdHZ-rWIGYDBsPzUIYxO3FnaQOJ6Qt3I7ADPE_xkZNFKh2m0vjXnO9QIapeTrxWoecEDu8UV84Q",
+            "Authorization": f"{cookie}",
             "Connection": "keep-alive",
             "Content-Type": "application/json;charset=UTF-8",
-            "Cookie": f"{cookie_header}",
+            "Cookie": "HWWAFSESID=2e792732886d588dc3; HWWAFSESTIME=1753059407266",
             "Host": "zlzywg.chinatowercom.cn:8070",
             "Origin": "https://zlzywg.chinatowercom.cn:8070",
             "Referer": "https://zlzywg.chinatowercom.cn:8070/alarmcenter/alarmMonitor",
@@ -32,51 +31,85 @@ class device_alarms():
             "sec-ch-ua": "\"Chromium\";v=\"136\", \"Microsoft Edge\";v=\"136\", \"Not.A/Brand\";v=\"99\"",
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\""
-}
+        }
+
+        # 路径配置
         INDEX = os.getcwd()
         self.save_path = os.path.join(INDEX, "xls")
-        self.output_path = os.path.join(INDEX, "output")
-        self.output_name = os.path.join(self.output_path, "设备告警-结果.xlsx")
+        os.makedirs(self.save_path, exist_ok=True)
         self.file_name1 = os.path.join(self.save_path, "活动告警.xlsx")
         self.file_name2 = os.path.join(self.save_path, "关闭告警.xlsx")
         self.file_name3 = os.path.join(self.save_path, "恢复告警.xlsx")
 
-    def fetch_and_save_alarms(self):
-        page = 1
-        page_size = 100
-        write_header = True
+        # 状态映射配置：包含状态值、对应的URL、保存文件、名称
+        self.status_mapping = {
+            "0": {
+                "url": self.active_url,
+                "file": self.file_name1,
+                "name": "活动告警"
+            },
+            2: {
+                "url": self.history_url,
+                "file": self.file_name2,
+                "name": "关闭告警"
+            },
+            1: {
+                "url": self.history_url,
+                "file": self.file_name3,
+                "name": "恢复告警"
+            }
+        }
 
+    def fetch_and_save_alarms(self):
+        page_size = 100
         columns = [
             "告警流水号", "告警名称", "告警类型", "设备名称", "站址名称", "首次时间", "更新时间", "设备编码", "站址编码",
-            "管理区域（省）", "管理区域（市）", "管理区域（区）", "业务类型", "资源类型", "设备种类", "设备类型", "告警来源"
+            "管理区域（省）", "管理区域（市）", "管理区域（区）", "业务类型", "资源类型", "设备种类", "设备类型", "告警来源", "告警状态"
         ]
 
-        with pd.ExcelWriter(self.file_name1, engine='openpyxl') as writer:
-            while True:
+        # 遍历不同的状态值（0:活动告警，1:关闭告警，2:恢复告警）
+        for status in ["0", 2, 1]:
+            config = self.status_mapping[status]
+            print(f"\n===== 开始获取【{config['name']}】数据（状态值: {status}）=====")
+            status_data = []
+
+            has_more_pages = True
+            page = 1
+
+            while has_more_pages:
+                # 构建带分页参数的URL（不同状态使用不同的基础URL）
+                url = f"{config['url']}?pageNum={page}&pageSize={page_size}"
+                # 请求参数（保持0为字符串，1/2为整数）
                 params = {
-                    "pageNum": page,
-                    "pageSize": page_size,
                     "admProvinceCode": "450000",
-                    "alarmTimeStart": "2025-07-12 00:00:00",
-                    "alarmTimeEnd": "2025-07-18 23:59:59",
-                    "alarmStatus": "0"
+                    "alarmStatus": status,
+                    "alarmTimeStart": "2025-06-01 00:00:00",
+                    "alarmTimeEnd": "2025-07-21 00:00:00",
                 }
 
                 try:
-                    response = requests.post(url=self.base_url, headers=self.headers, json=params)
-                    response.raise_for_status()  # 检查请求是否成功
+                    # 发送请求（根据状态调用不同的URL）
+                    response = requests.post(url=url, headers=self.headers, json=params)
+                    response.raise_for_status()
                     data = response.json()
-                except Exception as e:
-                    print(f"请求异常: {e}")
-                    break
 
-                if data["code"] == 200:
-                    if not data["data"]["data"]:
-                        print(f"第 {page} 页没有数据")
-                        break
+                    # 提取数据记录（兼容不同格式的响应结构）
+                    records = None
+                    if "data" in data:
+                        if "records" in data["data"]:
+                            records = data["data"]["records"]
+                        elif isinstance(data["data"], list):
+                            records = data["data"]
+                        elif "data" in data["data"] and isinstance(data["data"]["data"], list):
+                            records = data["data"]["data"]
 
-                    rows = []
-                    for item in data["data"]["data"]:
+                    if not records:
+                        print(f"第 {page} 页没有数据，终止当前状态爬取")
+                        has_more_pages = False
+                        break  # 无数据时终止
+
+                    # 解析记录，添加状态列
+                    for item in records:
                         row = [
                             item.get("alarmMsgId", ""),
                             item.get("alarmTitle", ""),
@@ -94,26 +127,39 @@ class device_alarms():
                             item.get("devResType", ""),
                             item.get("devType", ""),
                             item.get("devChildType", ""),
-                            item.get("alarmSourceName", "")
+                            item.get("alarmSourceName", ""),
+                            status  # 添加状态列，方便核对
                         ]
-                        rows.append(row)
+                        status_data.append(row)
 
-                    df = pd.DataFrame(rows, columns=columns)
-                    df.to_excel(writer, sheet_name='活动告警', index=False, header=write_header)
-                    print(f"已写入第 {page} 页数据")
+                    # 输出进度信息
+                    print(f"已获取第 {page} 页数据，本页共 {len(records)} 条，累计 {len(status_data)} 条")
 
-                    total = data["data"]["total"]
-                    total_pages = (total + page_size - 1) // page_size
-                    write_header = False
+                    # 检查总页数，提前终止（避免无效请求）
+                    total = data.get("total") or data.get("data", {}).get("total")
+                    if total:
+                        total_pages = (total + page_size - 1) // page_size
+                        if page >= total_pages:
+                            print(f"已获取全部 {total_pages} 页数据，终止当前状态爬取")
+                            has_more_pages = False
+                            break
 
-                    if page >= total_pages:
-                        print(f"所有数据写入完成，共 {page} 页")
-                        break
-                else:
-                    print(f"请求失败：{data.get('msg', '未知错误')}")
-                    break
+                    page += 1
 
-                page += 1
+                except Exception as e:
+                    print(f"第 {page} 页请求失败: {str(e)[:100]}")  # 简化错误信息
+                    has_more_pages = False
+                    break  # 异常时终止
+
+                time.sleep(1)  # 间隔请求，避免频繁访问
+
+            # 写入对应状态的Excel文件
+            if status_data:
+                df = pd.DataFrame(status_data, columns=columns)
+                df.to_excel(config["file"], sheet_name=config["name"], index=False)
+                print(f"\n【{config['name']}】爬取完成，共 {len(status_data)} 条，已保存至：{config['file']}")
+            else:
+                print(f"\n【{config['name']}】未获取到任何数据\n")
 
     def main(self):
         self.fetch_and_save_alarms()

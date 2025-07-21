@@ -6,7 +6,7 @@ import pandas as pd
 import win32com.client as win32
 import os
 
-class Custom_Workorder():
+class custom_workorder_yys():
     def __init__(self):
         cookie_url = "http://10.19.6.250:5000/get_4a_cookie"
         res = requests.get(cookie_url)
@@ -14,149 +14,91 @@ class Custom_Workorder():
         cookie_dict = json.loads(cookie_str)
         cookie_header = "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
 
-        self.base_url = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/exportExcelAndImage"
+        self.base_url = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/exportExcel"
         self.headers = {
-            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
             "Connection": "keep-alive",
-            "Content-Type": "application/json",
             "Cookie": f"{cookie_header}",
             "Host": "omms.chinatowercom.cn:9000",
-            "Origin": "http://omms.chinatowercom.cn:9000",
-            "Referer": "http://omms.chinatowercom.cn:9000/portal/iframe.html?modules/selfTask/views/taskListIndex",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0",
-            "X-Requested-With": "XMLHttpRequest"
-        }
+            "Referer": "http://omms.chinatowercom.cn:9000/portal/iframe.html?modules=selfTask/views/taskListIndex",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
+}
         INDEX = os.getcwd()
         self.save_path = os.path.join(INDEX, "xls")
         self.output_path = os.path.join(INDEX, "output")
-        self.output_name = os.path.join(self.output_path, "自定义工单-结果.xlsx")
-        self.file_name1 = os.path.join(self.save_path, "当前工单.zip")
-        self.file_name2 = os.path.join(self.save_path, "历史工单.zip")
+        self.output_name = os.path.join(self.output_path, "联通调度工单核实现场设备情况-结果.xlsx")
+        self.file_name = os.path.join(self.save_path, "当前工单.xlsx")
+        self.model_path = os.path.join(self.save_path, "模板.xls")
 
     def spider(self):
-        query_types = [1, 2]
-        for query_type in query_types:
-            if query_type == 1:
-                file_name = self.file_name1
-            elif query_type == 2:
-                file_name = self.file_name2
-            params = {
-                "queryType": query_type,
-                "orgId": "0098364",
-                "BUSI_TYPE": "1",
-                "status": "8",
-                "templateName": "联通调度",
-                "pageName": "taskListIndex",
-                "isWithImage": "withImage"
-            }
+        params = {
+          "queryType": "1",
+          "orgId": "0098364",
+          "BUSI_TYPE": "1",
+          "status": "5,6,7,8,10,9",
+          "templateName": "联通调度",
+          "yunjianStatus": "5,6,7,8,10,9",
+          "pageName": "taskListIndex"
+        }
+        res = requests.get(url=self.base_url, headers=self.headers, params=params)
+        res.raise_for_status()  # 检查请求是否成功
+        with open(self.file_name, "wb") as f:
+            f.write(res.content)
+        print(f"数据已成功保存到 {self.file_name}")
 
-            max_retries = 100  # 最大重试次数
-            retry_delay = 10  # 重试延迟(秒)
+    def excel_process(self):
+        """
+        处理Excel文件，将指定文件夹中的数据文件内容复制到主表文件中。
 
-            for attempt in range(max_retries):
-                try:
-                    print(f"\n尝试第 {attempt + 1} 次下载...")
+        :param index_path: 文件夹路径
+        """
+        print('1、把数据文件和通报模板放在同一文件夹下')
+        print('2、打开上述文件，如果提示保护视图则取消（报错大概率是这个问题），如果提示别的东西请点击掉，保证程序能够编辑文档')
 
-                    # 使用流式下载
-                    with requests.get(
-                            url=self.base_url,
-                            headers=self.headers,
-                            params=params,
-                            stream=True,
-                    ) as response:
-                        response.raise_for_status()
+        # 初始化 COM 库
+        pythoncom.CoInitialize()
 
-                        # 初始化下载统计
-                        downloaded = 0
-                        start_time = time.time()
-                        last_print = 0
-                        # 根据 queryType 保存到不同的文件
+        try:
+            # 打开模板文件
+            xl = win32.gencache.EnsureDispatch('Excel.Application')  # 开启excel软件
+            xl.DisplayAlerts = False
+            xl.Visible = False  # 窗口是否可见
+            workbook_main = xl.Workbooks.Open(self.model_path)  # 打开上述路径文件
 
-                        with open(file_name, "wb") as f:
-                            for chunk in response.iter_content(chunk_size=8192):
-                                if chunk:
-                                    f.write(chunk)
-                                    downloaded += len(chunk)
+            # 打开下载文件
+            workbook_data = xl.Workbooks.Open(self.file_name)
+            sheet_data = workbook_data.Sheets('工单信息')
+            sheet_main = workbook_main.Sheets('目前已派清单（需处理-累计）')
 
-                                    # 每5秒打印一次进度
-                                    if time.time() - last_print > 5:
-                                        speed = downloaded / (time.time() - start_time) / 1024
-                                        print(f"\r已下载: {downloaded / 1024 / 1024:.2f} MB | 速度: {speed:.2f} KB/s",
-                                              end="")
-                                        last_print = time.time()
+            # 动态获取数据的实际范围
+            last_row = sheet_data.Cells(sheet_data.Rows.Count, 1).End(win32.constants.xlUp).Row
+            source_range = sheet_data.Range(f'A2:AE{last_row}')  # 从A2开始复制
 
-                        # 下载完成后打印总结
-                        total_time = time.time() - start_time
-                        speed = downloaded / total_time / 1024
-                        print(
-                            f"\n下载完成! 总大小: {downloaded / 1024 / 1024:.2f} MB | 平均速度: {speed:.2f} KB/s | 耗时: {total_time:.2f}秒")
+            # 1. 只清除A-F列的数据（不包含第一行表头）
+            last_clear_row = sheet_main.UsedRange.Rows.Count
+            if last_clear_row > 1:
+                sheet_main.Range(f"A2:AE{last_clear_row}").ClearContents()
 
-                        # 验证文件是否完整（通过解压测试）
-                        if self.validate_zip_file(file_name):
-                            print("文件验证通过")
-                            return True
-                        else:
-                            print("文件验证失败，将重试...")
-                            os.remove(file_name)
+            # 只粘贴值到目标表
+            source_range.Copy()
+            sheet_main.Range('A2').PasteSpecial(Paste=win32.constants.xlPasteValues)
+            xl.CutCopyMode = False  # 释放剪切板
 
-                except Exception as e:
-                    print(f"下载出错: {str(e)}")
-                    if os.path.exists(file_name):
-                        os.remove(file_name)
+            workbook_main.SaveAs(self.output_name)
+            workbook_main.Close()
+            xl.Quit()
+            print('已全部完成')
+        except Exception as e:
+            raise
+        finally:
+            # 释放 COM 库
+            pythoncom.CoUninitialize()
 
-                if attempt < max_retries - 1:
-                    print(f"等待 {retry_delay} 秒后重试...")
-                    time.sleep(retry_delay)
-                    retry_delay *= 2  # 指数退避
-
-            print("达到最大重试次数，下载失败")
-            return False
-
-    def validate_zip_file(self, file_name):
-        """验证ZIP文件是否包含JPG、TXT和XLS三种格式的文件"""
-
-        import zipfile
-
-        required_extensions = {'.jpg', '.txt', '.xls'}
-        found_extensions = set()
-
-        with zipfile.ZipFile(file_name) as zip_ref:
-            # 检查ZIP文件是否有效
-            if zip_ref.testzip() is not None:
-                print("ZIP文件损坏或包含错误")
-                return False
-
-            # 检查文件类型
-            for file_info in zip_ref.infolist():
-                filename = file_info.filename.lower()
-                if filename.endswith('.jpg'):
-                    found_extensions.add('.jpg')
-                elif filename.endswith('.txt'):
-                    found_extensions.add('.txt')
-                elif filename.endswith('.xls'):
-                    found_extensions.add('.xls')
-
-                # 如果已经找到所有需要的文件类型，提前退出循环
-                if found_extensions == required_extensions:
-                    break
-
-            # 验证是否包含所有必需的文件类型
-            missing_extensions = required_extensions - found_extensions
-            if missing_extensions:
-                print(f"ZIP文件中缺少以下类型的文件: {', '.join(missing_extensions)}")
-                return False
-
-            print("ZIP文件验证通过，包含所有必需的文件类型")
-            return True
     def main(self):
-        start_time = time.time()
-        print("开始执行自定义工单下载任务...")
-        if self.spider():
-            print(f"任务成功完成，总耗时: {time.time() - start_time:.2f}秒")
-        else:
-            print(f"任务失败，总耗时: {time.time() - start_time:.2f}秒")
-
+        self.spider()
+        self.excel_process()
 if __name__ == "__main__":
-    Custom_Workorder().main()
+    custom_workorder_yys().main()

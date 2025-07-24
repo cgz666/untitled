@@ -24,7 +24,7 @@ def ai_yzm(src):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "识别图片中的验证码，结果只用输出验证码不要包含别的部分"},
+                    {"type": "text", "text": "识别图片中的4位验证码，结果只用输出验证码不要包含别的部分"},
                     {"type": "image_url", "image_url": {
                         "url": src
                     }}
@@ -311,7 +311,7 @@ class main():
 
                 # 分批处理备案详情
                 all_details = []
-                batch_size = 30  # 每批处理30行数据
+                batch_size = 15  # 每批处理30行数据
 
                 for i in range(0, len(content_parts), batch_size):
                     # 获取当前批次的数据
@@ -325,7 +325,7 @@ class main():
 
                             # 调用AI接口
                             ai_res = ai_text(
-                                batch_text + """处理上述文本,其内部有不同站址的信息，结果以[{'铁塔站址名称':'','铁塔站址编码':'','位置':'','经度':'','纬度':''}]列表格式返回，重复的也要保留重复记录，结果只返回json格式列表[]，[]外面不需要其他文字和多余字符""")
+                                batch_text + """处理上述文本,其内部有不同站址的信息，结果以[{'铁塔站址名称':'','铁塔站址编码':''注意：铁塔站址编码必须是45开头的18位纯数字或空值,'位置':'','经度':'','纬度':''}]列表格式返回，且每一条记录必须完整以{}返回,重复的也要保留重复记录，结果只返回json格式列表[]，[]外面不需要其他文字和多余字符""")
 
                             # 清理AI返回内容
                             cleaned_res = ai_res.strip()
@@ -578,7 +578,6 @@ class main():
             self.process_account(row)
             # 每次处理完一个账号后等待一段时间
             time.sleep(5)
-
 
 if __name__ == "__main__":
     main().run_thread()

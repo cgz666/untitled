@@ -1,12 +1,14 @@
 import requests
 import json
-import time
-import pythoncom
+import zipfile
+from datetime import datetime
 import pandas as pd
-import win32com.client as win32
 import os
+import time
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-class custom_workorder_yys_photo():
+class Custom_Workorder_yys_photo():
     def __init__(self):
         cookie_url = "http://10.19.6.250:5000/get_4a_cookie"
         res = requests.get(cookie_url)
@@ -14,7 +16,9 @@ class custom_workorder_yys_photo():
         cookie_dict = json.loads(cookie_str)
         cookie_header = "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
 
-        self.base_url = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/exportExcelAndImage"
+        self.url1 = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/getSelfTaskList"
+        self.url2 = "http://omms.chinatowercom.cn:9000/portal/SelfTaskController/exportExcelAndImage"
+
         self.headers = {
             "Accept": "application/json, text/javascript, */*; q=0.01",
             "Accept-Encoding": "gzip, deflate",
@@ -28,135 +32,246 @@ class custom_workorder_yys_photo():
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0",
             "X-Requested-With": "XMLHttpRequest"
         }
-        INDEX = os.getcwd()
-        self.save_path = os.path.join(INDEX, "xls")
-        self.output_path = os.path.join(INDEX, "output")
-        self.output_name = os.path.join(self.output_path, "自定义工单-结果.xlsx")
-        self.file_name1 = os.path.join(self.save_path, "当前工单.zip")
-        self.file_name2 = os.path.join(self.save_path, "历史工单.zip")
+        self.INDEX = r'F:\untitled\four_a_script\Custom_Workorder_yys\xls'
+        self.save_path1 = os.path.join(self.INDEX, "当前工单")
+        self.save_path2 = os.path.join(self.INDEX, "历史工单")
+        self.output_path = os.path.join(self.INDEX, "output")
+        self.output_name = os.path.join(self.output_path, "自定义工单.zip")
 
-    def spider(self):
-        query_types = [1, 2]
-        for query_type in query_types:
-            if query_type == 1:
-                file_name = self.file_name1
-            elif query_type == 2:
-                file_name = self.file_name2
+        # 2. 初始化带重试机制的Session
+        self.session = self._init_session()
+        # 用于统计总文件数和当前下载进度
+        self.total_files = 0
+        self.current_file = 0
+
+    def _init_session(self):
+        """创建带重试机制的Session，处理网络波动"""
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=3,  # 最大重试次数
+            backoff_factor=1,  # 重试间隔：1s, 2s, 4s...
+            status_forcelist=[429, 500, 502, 503, 504],  # 触发重试的状态码
+            allowed_methods=["GET", "POST"]  # 允许重试的请求方法
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)  # 为HTTP请求挂载适配器
+        session.mount("https://", adapter)
+        return session
+
+    def spider1(self):
+        if os.path.exists(self.save_path1):
+            for file_name in os.listdir(self.save_path1):
+                file_path = os.path.join(self.save_path1, file_name)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)  # 删除文件
+                elif os.path.isdir(file_path):
+                    os.rmdir(file_path)  # 删除空的子文件夹
+            print(f"已清空 {self.save_path1} 文件夹")
+        # 逻辑同原代码，改用self.session.post，并添加超时和间隔
+        page = 1
+        page_size = 15
+        data = {
+            "queryType": "1",
+            "orgId": "0098364",
+            "BUSI_TYPE": "1",
+            "status": [8],
+            "templateName": "联通调度",
+            "yunjianStatus": [8],
+            "pageName": "taskListIndex",
+            "page": page,
+            "rows": page_size
+        }
+        results = []
+        while True:
+            try:
+                response = self.session.post(
+                    url=self.url1,
+                    headers=self.headers,
+                    json=data,
+                )
+                response.raise_for_status()
+            except Exception as e:
+                print(f"获取工单列表失败（page={page}）：{e}，跳过当前页")
+                break
+
+            response_data = response.json()
+            if not response_data.get("rows"):
+                break  # 无数据时退出循环
+
+            for item in response_data["rows"]:
+                result = {
+                    "SITE_NAME": item.get("SITE_NAME", ""),
+                    "ID": item.get("ID", ""),
+                    "DO_END_TIME": item.get("DO_END_TIME", "")
+                }
+                if result["DO_END_TIME"]:
+                    try:
+                        result["DO_END_TIME"] = datetime.strptime(
+                            result["DO_END_TIME"], "%Y-%m-%d %H:%M:%S.%f"
+                        ).strftime("%Y-%m-%d")
+                    except Exception as e:
+                        print(f"日期格式错误：{e}，使用原始值")
+                results.append(result)
+
+            page += 1
+            data["page"] = page
+            time.sleep(1)  # 增加1秒间隔，减轻服务器压力
+
+        # 更新总文件数
+        self.total_files += len(results)
+        print(f"当前工单模块共有 {len(results)} 个文件需要下载")
+
+        # 下载文件（带重试）
+        self._download_files(results, self.save_path1, query_type="1", status="8")
+
+    def spider2(self):
+        if os.path.exists(self.save_path2):
+            for file_name in os.listdir(self.save_path2):
+                file_path = os.path.join(self.save_path2, file_name)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)  # 删除文件
+                elif os.path.isdir(file_path):
+                    os.rmdir(file_path)  # 删除空的子文件夹
+            print(f"已清空 {self.save_path2} 文件夹")
+        page = 1
+        page_size = 15
+        data = {
+            "queryType": "2",
+            "orgId": "0098364",
+            "BUSI_TYPE": "1",
+            "status": [11],
+            "templateName": "联通调度",
+            "yunjianStatus": [11],
+            "pageName": "taskListIndex",
+            "page": page,
+            "rows": page_size
+        }
+        results = []
+        while True:
+            try:
+                response = self.session.post(
+                    url=self.url1,
+                    headers=self.headers,
+                    json=data,
+                )
+                response.raise_for_status()
+            except Exception as e:
+                print(f"获取工单列表失败（page={page}）：{e}，跳过当前页")
+                break
+
+            response_data = response.json()
+            if not response_data.get("rows"):
+                break
+
+            for item in response_data["rows"]:
+                result = {
+                    "SITE_NAME": item.get("SITE_NAME", ""),
+                    "ID": item.get("ID", ""),
+                    "DO_END_TIME": item.get("DO_END_TIME", "")
+                }
+                if result["DO_END_TIME"]:
+                    try:
+                        result["DO_END_TIME"] = datetime.strptime(
+                            result["DO_END_TIME"], "%Y-%m-%d %H:%M:%S.%f"
+                        ).strftime("%Y-%m-%d")
+                    except Exception as e:
+                        print(f"日期格式错误：{e}，使用原始值")
+                results.append(result)
+
+            page += 1
+            data["page"] = page
+            time.sleep(1)
+
+        # 更新总文件数
+        previous_total = self.total_files
+        self.total_files += len(results)
+        print(f"历史工单模块共有 {len(results)} 个文件需要下载")
+
+        # 下载文件（带重试）
+        self._download_files(results, self.save_path2, query_type="2", status="11")
+
+    def _download_files(self, results, save_path, query_type, status):
+        """通用文件下载方法，带重试逻辑"""
+        for index, row in pd.DataFrame(results).iterrows():
+            self.current_file += 1
+            site_name = row["SITE_NAME"]  # 避免文件名含特殊字符
+            task_id = row["ID"]
+            do_end_time = row["DO_END_TIME"]
+            file_name = f"{site_name}_{task_id}_{do_end_time}.zip"
+            file_path = os.path.join(save_path, file_name)
+
+            # 显示进度
+            print(f"\n正在下载第 {self.current_file}/{self.total_files} 个文件: {file_name}")
+
+            # 跳过已存在的文件（可选，避免重复下载）
+            # if os.path.exists(file_path):
+            #     print(f"文件已存在，跳过：{file_path}")
+            #     continue
+
             params = {
                 "queryType": query_type,
                 "orgId": "0098364",
                 "BUSI_TYPE": "1",
-                "status": "8",
+                "status": status,
+                "taskId": task_id,
                 "templateName": "联通调度",
                 "pageName": "taskListIndex",
                 "isWithImage": "withImage"
             }
 
-            max_retries = 100  # 最大重试次数
-            retry_delay = 10  # 重试延迟(秒)
-
-            for attempt in range(max_retries):
+            success = False
+            for attempt in range(3):
                 try:
-                    print(f"\n尝试第 {attempt + 1} 次下载...")
-
-                    # 使用流式下载
-                    with requests.get(
-                            url=self.base_url,
-                            headers=self.headers,
-                            params=params,
-                            stream=True,
-                    ) as response:
-                        response.raise_for_status()
-
-                        # 初始化下载统计
-                        downloaded = 0
-                        start_time = time.time()
-                        last_print = 0
-                        # 根据 queryType 保存到不同的文件
-
-                        with open(file_name, "wb") as f:
-                            for chunk in response.iter_content(chunk_size=8192):
-                                if chunk:
-                                    f.write(chunk)
-                                    downloaded += len(chunk)
-
-                                    # 每5秒打印一次进度
-                                    if time.time() - last_print > 5:
-                                        speed = downloaded / (time.time() - start_time) / 1024
-                                        print(f"\r已下载: {downloaded / 1024 / 1024:.2f} MB | 速度: {speed:.2f} KB/s",
-                                              end="")
-                                        last_print = time.time()
-
-                        # 下载完成后打印总结
-                        total_time = time.time() - start_time
-                        speed = downloaded / total_time / 1024
-                        print(
-                            f"\n下载完成! 总大小: {downloaded / 1024 / 1024:.2f} MB | 平均速度: {speed:.2f} KB/s | 耗时: {total_time:.2f}秒")
-
-                        # 验证文件是否完整（通过解压测试）
-                        if self.validate_zip_file(file_name):
-                            print("文件验证通过")
-                            return True
-                        else:
-                            print("文件验证失败，将重试...")
-                            os.remove(file_name)
-
+                    print(f"下载 {file_name}（第{attempt + 1}次尝试）...")
+                    response = self.session.get(
+                        url=self.url2,
+                        headers=self.headers,
+                        params=params,
+                    )
+                    response.raise_for_status()
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    success = True
+                    print(f"保存成功：{file_path}")
+                    break
+                except (requests.exceptions.ChunkedEncodingError,
+                        requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout) as e:
+                    print(f"第{attempt + 1}次下载失败：{e}")
+                    time.sleep(2)
                 except Exception as e:
-                    print(f"下载出错: {str(e)}")
-                    if os.path.exists(file_name):
-                        os.remove(file_name)
-
-                if attempt < max_retries - 1:
-                    print(f"等待 {retry_delay} 秒后重试...")
-                    time.sleep(retry_delay)
-                    retry_delay *= 2  # 指数退避
-
-            print("达到最大重试次数，下载失败")
-            return False
-
-    def validate_zip_file(self, file_name):
-        """验证ZIP文件是否包含JPG、TXT和XLS三种格式的文件"""
-
-        import zipfile
-
-        required_extensions = {'.jpg', '.txt', '.xls'}
-        found_extensions = set()
-
-        with zipfile.ZipFile(file_name) as zip_ref:
-            # 检查ZIP文件是否有效
-            if zip_ref.testzip() is not None:
-                print("ZIP文件损坏或包含错误")
-                return False
-
-            # 检查文件类型
-            for file_info in zip_ref.infolist():
-                filename = file_info.filename.lower()
-                if filename.endswith('.jpg'):
-                    found_extensions.add('.jpg')
-                elif filename.endswith('.txt'):
-                    found_extensions.add('.txt')
-                elif filename.endswith('.xls'):
-                    found_extensions.add('.xls')
-
-                # 如果已经找到所有需要的文件类型，提前退出循环
-                if found_extensions == required_extensions:
+                    print(f"下载异常：{e}")
                     break
 
-            # 验证是否包含所有必需的文件类型
-            missing_extensions = required_extensions - found_extensions
-            if missing_extensions:
-                print(f"ZIP文件中缺少以下类型的文件: {', '.join(missing_extensions)}")
-                return False
+            if not success:
+                print(f"⚠️ 多次尝试后仍失败，跳过文件：{file_name}")
+            time.sleep(1)
 
-            print("ZIP文件验证通过，包含所有必需的文件类型")
-            return True
+    def combine_zip_files(self):
+        """合并文件（逻辑不变，增加异常处理）"""
+        try:
+            with zipfile.ZipFile(self.output_name, 'w', zipfile.ZIP_DEFLATED) as combined_zip:
+                for root, _, files in os.walk(self.save_path1):
+                    for file in files:
+                        combined_zip.write(
+                            os.path.join(root, file),
+                            arcname=os.path.relpath(os.path.join(root, file), self.INDEX)
+                        )
+                for root, _, files in os.walk(self.save_path2):
+                    for file in files:
+                        combined_zip.write(
+                            os.path.join(root, file),
+                            arcname=os.path.relpath(os.path.join(root, file), self.INDEX)
+                        )
+            print(f"合并成功：{self.output_name}")
+        except Exception as e:
+            print(f"合并文件失败：{e}")
+
     def main(self):
-        start_time = time.time()
-        print("开始执行自定义工单下载任务...")
-        if self.spider():
-            print(f"任务成功完成，总耗时: {time.time() - start_time:.2f}秒")
-        else:
-            print(f"任务失败，总耗时: {time.time() - start_time:.2f}秒")
+        self.spider1()
+        self.spider2()
+        self.combine_zip_files()
+        print(f"\n全部下载完成！总共处理了 {self.total_files} 个文件")
 
 if __name__ == "__main__":
-    custom_workorder_yys_photo().main()
+    Custom_Workorder_yys_photo().main()

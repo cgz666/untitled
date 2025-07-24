@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import os
 
+
 class device_alarms():
     def __init__(self):
         # 获取Cookie
@@ -60,6 +61,51 @@ class device_alarms():
             }
         }
 
+        # 进度文件路径
+        self.progress_file = os.path.join(INDEX, "progress.json")
+
+        # 读取进度
+        self.progress = self.load_progress()
+
+    def load_progress(self):
+        """加载进度信息"""
+        if os.path.exists(self.progress_file):
+            with open(self.progress_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {"status": "0", "page": 1}
+
+    def save_progress(self, status, page):
+        """保存进度信息"""
+        with open(self.progress_file, "w", encoding="utf-8") as f:
+            json.dump({"status": status, "page": page}, f)
+
+    def get_total_pages(self, url, status):
+        """获取指定状态的总页数"""
+        page_size = 100
+        params = {
+            "admProvinceCode": "450000",
+            "alarmStatus": status,
+            "alarmTimeStart": "2025-06-01 00:00:00",
+            "alarmTimeEnd": "2025-07-22 00:00:00",
+            "pageNum": 1,
+            "pageSize": page_size
+        }
+
+        try:
+            response = requests.post(url=url, headers=self.headers, json=params)
+            response.raise_for_status()
+            data = response.json()
+
+            # 获取总记录数
+            total = data.get("total") or data.get("data", {}).get("total")
+            if total is not None:
+                total_pages = (total + page_size - 1) // page_size
+                return total_pages
+            return None
+        except Exception as e:
+            print(f"获取总页数失败: {str(e)[:100]}")
+            return None
+
     def fetch_and_save_alarms(self):
         page_size = 100
         columns = [
@@ -67,16 +113,34 @@ class device_alarms():
             "管理区域（省）", "管理区域（市）", "管理区域（区）", "业务类型", "资源类型", "设备种类", "设备类型", "告警来源", "告警状态"
         ]
 
-        # 遍历不同的状态值（0:活动告警，1:关闭告警，2:恢复告警）
+        # 遍历不同的状态值（0:活动告警，1:恢复告警，2:关闭告警）
         for status in ["0", 2, 1]:
+            # 将状态值转换为整数（如果需要比较）
+            try:
+                status_int = int(status)
+            except ValueError:
+                print(f"状态值 {status} 无法转换为整数，跳过")
+                continue
+
+            # 如果进度文件中记录的状态值大于当前状态值，则跳过
+            if status_int < int(self.progress.get("status", 0)):
+                continue
+
             config = self.status_mapping[status]
             print(f"\n===== 开始获取【{config['name']}】数据（状态值: {status}）=====")
             status_data = []
 
-            has_more_pages = True
-            page = 1
+            # 首先获取总页数
+            total_pages = self.get_total_pages(config["url"], status)
+            if total_pages is None:
+                print("无法获取总页数，跳过当前状态")
+                continue
+            print(f"总页数: {total_pages}")
 
-            while has_more_pages:
+            # 从进度文件中读取的页码开始
+            page = int(self.progress.get("page", 1)) if status_int == int(self.progress.get("status", 0)) else 1
+
+            while page <= total_pages:
                 # 构建带分页参数的URL（不同状态使用不同的基础URL）
                 url = f"{config['url']}?pageNum={page}&pageSize={page_size}"
                 # 请求参数（保持0为字符串，1/2为整数）
@@ -105,7 +169,6 @@ class device_alarms():
 
                     if not records:
                         print(f"第 {page} 页没有数据，终止当前状态爬取")
-                        has_more_pages = False
                         break  # 无数据时终止
 
                     # 解析记录，添加状态列
@@ -133,22 +196,15 @@ class device_alarms():
                         status_data.append(row)
 
                     # 输出进度信息
-                    print(f"已获取第 {page} 页数据，本页共 {len(records)} 条，累计 {len(status_data)} 条")
+                    print(f"已获取第 {page}/{total_pages} 页数据，本页共 {len(records)} 条，累计 {len(status_data)} 条")
 
-                    # 检查总页数，提前终止（避免无效请求）
-                    total = data.get("total") or data.get("data", {}).get("total")
-                    if total:
-                        total_pages = (total + page_size - 1) // page_size
-                        if page >= total_pages:
-                            print(f"已获取全部 {total_pages} 页数据，终止当前状态爬取")
-                            has_more_pages = False
-                            break
+                    # 保存进度
+                    self.save_progress(str(status_int), page + 1)  # 保存下一页的页码
 
                     page += 1
 
                 except Exception as e:
                     print(f"第 {page} 页请求失败: {str(e)[:100]}")  # 简化错误信息
-                    has_more_pages = False
                     break  # 异常时终止
 
                 time.sleep(1)  # 间隔请求，避免频繁访问
@@ -161,8 +217,12 @@ class device_alarms():
             else:
                 print(f"\n【{config['name']}】未获取到任何数据\n")
 
+            # 重置进度文件，为下一个状态准备
+            self.save_progress(str(status_int + 1), 1)
+
     def main(self):
         self.fetch_and_save_alarms()
+
 
 if __name__ == "__main__":
     device_alarms().main()

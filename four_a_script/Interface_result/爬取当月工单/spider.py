@@ -233,6 +233,7 @@ class interface_result():
         url = self.url
         headers = self.headers
         view_state = self.get_view_state(url, headers)
+
         for city_idx, city_code in enumerate(self.city_list):
             print(f"正在爬取当天前历史工单 {city_idx + 1}/{len(self.city_list)}")
 

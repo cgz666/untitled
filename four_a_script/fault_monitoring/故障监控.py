@@ -6,7 +6,6 @@ import pandas as pd
 import os
 from bs4 import BeautifulSoup
 
-
 class fault_monitoring():
     def __init__(self):
         cookie_url = "http://10.19.6.250:5000/get_4a_cookie"
@@ -29,40 +28,6 @@ class fault_monitoring():
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0"
 }
         self.data_list = [
-            {
-                "AJAXREQUEST": "_viewRoot",
-                "hisQueryForm": "hisQueryForm",
-                "hisQueryForm:unitHidden": "",
-                "hisQueryForm:unitHid": "",
-                "hisQueryForm:queryDay": "30",
-                "hisQueryForm:queryFaultMids_hiddenValue": "退服场景",
-                "hisQueryForm:queryFaultMids": "退服场景",
-                "hisQueryForm:queryFaultDetail": "",
-                "hisQueryForm:queryFaultDetailName": "",
-                "hisQueryForm:queryLevel_hiddenValue": "",
-                "hisQueryForm:j_id201": "",
-                "hisQueryForm:j_id205": "",
-                "hisQueryForm:j_id209": "",
-                "hisQueryForm:j_id213": "",
-                "hisQueryForm:j_id217": "",
-                "hisQueryForm:j_id221": "",
-                "hisQueryForm:firststarttimeInputDate": "2025-07-01 00:00",
-                "hisQueryForm:firststarttimeInputCurrentDate": "07/2025",
-                "hisQueryForm:firstendtimeInputDate": "2025-07-24 00:00",
-                "hisQueryForm:firstendtimeInputCurrentDate": "07/2025",
-                "hisQueryForm:j_id229": "",
-                "hisQueryForm:recoverstarttimeInputDate": "",
-                "hisQueryForm:recoverstarttimeInputCurrentDate": "07/2025",
-                "hisQueryForm:recoverendtimeInputDate": "",
-                "hisQueryForm:recoverendtimeInputCurrentDate": "07/2025",
-                "hisQueryForm:j_id237": "",
-                "hisQueryForm:queryFsuStatus_hiddenValue": "",
-                "hisQueryForm:currPageObjId": "0",
-                "hisQueryForm:pageSizeText": "35",
-                "javax.faces.ViewState": "j_id6",
-                "hisQueryForm:j_id244": "hisQueryForm:j_id244"
-            },
-
             {
                 "AJAXREQUEST": "_viewRoot",
                 "hisQueryForm": "hisQueryForm",
@@ -131,14 +96,6 @@ class fault_monitoring():
                 "javax.faces.ViewState": "j_id6",
                 "hisQueryForm:j_id249": "hisQueryForm:j_id249"
             },
-
-            {
-                "AJAXREQUEST": "_viewRoot",
-                "j_id407": "j_id407",
-                "javax.faces.ViewState": "j_id6",
-                "j_id407:j_id410": "j_id407:j_id410"
-            },
-
             {
                 "j_id407": "j_id407",
                 "j_id407:j_id409": "全部",
@@ -161,7 +118,7 @@ class fault_monitoring():
             "0099989",
             "0099990",
         ]
-        self.INDEX = r'F:\untitled\four_a_script\fault_monitoring'
+        self.INDEX = os.getcwd()
         self.save_path = os.path.join(self.INDEX, "xls")
         self.output_path = os.path.join(self.INDEX, "output")
         self.output_name = os.path.join(self.output_path, "故障监控.xlsx")
@@ -180,23 +137,42 @@ class fault_monitoring():
         url = self.url
         headers = self.headers
         view_state = self.get_view_state(url, headers)
+
         for city_idx, city_code in enumerate(self.city_list):
             print(f"正在爬取故障监控工单 {city_idx + 1}/{len(self.city_list)}")
 
             # 处理前两个数据项
             for i, data in enumerate(self.data_list, start=1):
-                if i in [1, 2, 3]:
-                    data["queryForm:queryUnitId"] = city_code
+                if i in [1, 2]:
+                    data["hisQueryForm:unitHidden"] = city_code
+                    data["hisQueryForm:unitHid"] = city_code
                 data["javax.faces.ViewState"] = view_state
                 response = requests.post(url=url, data=data, headers=headers)
-                # 保存第三个请求的数据（导出请求）
                 if i == len(self.data_list):
                     with open(self.temp_files[city_idx], "wb") as file:
                         file.write(response.content)
                     print(f"城市组 {city_idx + 1} 的临时文件已成功保存到: {self.temp_files[city_idx]}")
             time.sleep(2)
+
+    def merge_excel_files(self):
+        """将所有临时文件合并为一个Excel文件"""
+        all_data = []
+        for file_path in self.temp_files:
+            if os.path.exists(file_path):
+                try:
+                    df = pd.read_excel(file_path)
+                    all_data.append(df)
+                except Exception as e:
+                    print(f"读取文件 {file_path} 时出错: {e}")
+        if all_data:
+            combined_df = pd.concat(all_data, ignore_index=True)
+            combined_df.to_excel(self.output_name, index=False)
+            print(f"所有文件已成功合并到: {self.output_name}")
+        else:
+            print("没有找到任何有效的临时文件进行合并。")
+
     def main(self):
         self.spider()
-
+        self.merge_excel_files()
 if __name__ == "__main__":
     fault_monitoring().main()

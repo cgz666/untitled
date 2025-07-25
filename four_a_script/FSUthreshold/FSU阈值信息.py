@@ -93,7 +93,7 @@ class FSUthreshold():
             "0099989",
             "0099990",
         ]
-        self.INDEX = r'F:\untitled\four_a_script\FSUthreshold'
+        self.INDEX = os.getcwd()
         self.save_path = os.path.join(self.INDEX, "xls")
         self.output_path = os.path.join(self.INDEX, "output")
         self.output_name = os.path.join(self.output_path, "FSU阈值.xlsx")

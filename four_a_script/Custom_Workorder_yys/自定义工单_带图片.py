@@ -32,7 +32,7 @@ class Custom_Workorder_yys_photo():
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0",
             "X-Requested-With": "XMLHttpRequest"
         }
-        self.INDEX = r'F:\untitled\four_a_script\Custom_Workorder_yys\xls'
+        self.INDEX = r'F:\untitled\four_a_script\custom_workorder_yys\xls'
         self.save_path1 = os.path.join(self.INDEX, "当前工单")
         self.save_path2 = os.path.join(self.INDEX, "历史工单")
         self.output_path = os.path.join(self.INDEX, "output")

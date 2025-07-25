@@ -196,7 +196,7 @@ class interface_result():
             "2710377449,2710377453"
         ]
 
-        INDEX = r"F:\newtower3.8\project\four_a_script\interface_result"
+        INDEX = os.getcwd()
         self.save_path = os.path.join(INDEX, "xls")
         self.output_path = os.path.join(INDEX, "output")
         self.output_name = os.path.join(self.output_path, "爬取运营商接口工单-结果.xlsx")

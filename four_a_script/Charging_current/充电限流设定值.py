@@ -80,7 +80,7 @@ class Charging_current():
             }
         ]
 
-        INDEX = r"F:\untitled\four_a_script\Charging_current"
+        INDEX = os.getcwd()
         self.save_path = os.path.join(INDEX, "xls")
         self.output_path = os.path.join(INDEX, "output")
         self.output_name = os.path.join(self.output_path, "爬取运营商接口工单-结果.xlsx")

@@ -172,7 +172,7 @@ class interface_result():
             "0099990"
         ]
 
-        INDEX = r"F:\untitled\four_a_script\Unicom_analysis"
+        INDEX = os.getcwd()
         self.save_path = os.path.join(INDEX, "xls")
         self.output_path = os.path.join(INDEX, "output")
         self.output_name = os.path.join(self.output_path, "联通分析-结果.xlsx")

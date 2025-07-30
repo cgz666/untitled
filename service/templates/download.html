@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运维管理系统 - 文件下载</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#34d399',
+                        dark: '#0f172a',
+                        'dark-light': '#1e293b',
+                        'gray-light': '#e2e8f0',
+                        'gray-mid': '#94a3b8',
+                        'gray-dark': '#334155'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-dark {
+                background-image: linear-gradient(to right, rgba(79, 70, 229, 0.05), rgba(15, 23, 42, 0));
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .nav-link {
+                @apply relative px-3 py-2 text-gray-light hover:text-white transition-colors duration-200;
+            }
+            .nav-link::after {
+                @apply content-[''] absolute w-0 h-0.5 bg-primary left-0 bottom-0 transition-all duration-300;
+            }
+            .nav-link:hover::after {
+                @apply w-full;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+            }
+            .btn-outline {
+                @apply border border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-300;
+            }
+            .loading-spinner {
+                @apply inline-block w-5 h-5 border-2 border-gray-mid border-t-primary rounded-full animate-spin;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-light min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-dark-light shadow-lg fixed w-full z-10 transition-all duration-300" id="mainNav">
+        <div class="max-width mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-server text-primary text-2xl mr-2"></i>
+                        <span class="font-bold text-xl text-white">运维管理系统</span>
+                    </a>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html" class="nav-link">首页</a>
+                        <a href="download.html" class="nav-link">文件下载</a>
+                        <a href="dashboard.html" class="nav-link">数据看板</a>
+                        <a href="settings.html" class="nav-link">系统设置</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="relative mr-4">
+                        <input type="text" placeholder="搜索..." class="bg-dark rounded-full py-1 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-40">
+                        <i class="fa fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-mid"></i>
+                    </div>
+                    <div class="relative ml-3">
+                        <div>
+                            <button type="button" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-primary" id="user-menu-button">
+                                <img class="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/id/1005/200/200" alt="用户头像">
+                            </button>
+                        </div>
+                        <div class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-dark-light ring-1 ring-black ring-opacity-5 focus:outline-none" id="user-menu" role="menu">
+                            <div class="py-1" role="none">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">个人资料</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">账号设置</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-red-400 hover:bg-red-900/30" role="menuitem">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-light hover:text-white hover:bg-dark focus:outline-none" id="mobile-menu-button">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 移动端菜单 -->
+        <div class="hidden sm:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary/20">首页</a>
+                <a href="download.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">文件下载</a>
+                <a href="dashboard.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">数据看板</a>
+                <a href="settings.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">系统设置</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-6">
+                <div class="bg-dark-light rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white mb-1">文件下载中心</h2>
+                            <p class="text-gray-mid">下载前请仔细确认最后更新时间，确保获取最新数据</p>
+                        </div>
+                        <div class="mt-4 md:mt-0 flex space-x-2">
+                            <div class="relative">
+                                <input type="text" placeholder="搜索文件..." class="bg-dark rounded-lg py-2 px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-64">
+                                <i class="fa fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-mid"></i>
+                            </div>
+                            <button class="btn-primary hidden md:block">
+                                <i class="fa fa-refresh mr-1"></i> 刷新列表
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-light rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-dark">
+                            <thead class="bg-primary">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">序号</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">文件名</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">路径</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">更新时间</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-dark">
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">智联设备告警清单</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">智联专业网管平台</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天00:00更新，最近更新时间：<span class="text-green-400">2025-07-28 00:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="device_alarms">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">2</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">自定义工单-运营商业务类(带图片导出)</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天06:00更新，最近更新时间：<span class="text-green-400">2025-07-28 06:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="custom_workorder_yys_photo">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">联通重复故障分析</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天06:30更新，最近更新时间：<span class="text-green-400">2025-07-28 06:30:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="unicom_analysis">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">4</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">智联设备平均在线率统计表</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">智联专业网管平台</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天08:00更新，最近更新时间：<span class="text-green-400">2025-07-28 08:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="online_rate_order">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">5</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">工单及油机匹配率统计</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">发电取信调度平台</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天09:00更新，最近更新时间：<span class="text-green-400">2025-07-28 09:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="quxin_order_youji">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">6</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">移动无运营商推送退服类告警统计</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">发电取信调度平台</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天09:00更新，最近更新时间：<span class="text-green-400">2025-07-28 09:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="quxin_yidong_offline">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">7</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">故障监控</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">每天14:00更新，最近更新时间：<span class="text-green-400">2025-07-28 14:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="fault_monitoring">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">8</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">开关电源电压设置修改情况通报</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">星期一06:00更新，最近更新时间：<span class="text-green-400">2025-07-28 06:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="battery_order">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">9</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">运营商接口工单</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">星期一09:00更新，最近更新时间：<span class="text-green-400">2025-07-28 09:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="Interface_order">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">10</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">物联卡信号强度</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">4A运维监控系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">星期一09:30更新，最近更新时间：<span class="text-green-400">2025-07-28 09:30:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="signal_strength">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- 补充完整剩余的行 -->
+                                <tr class="hover:bg-dark transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">11</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">智联工单处理情况</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">智联专业网管平台</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">星期三14:00更新，最近更新时间：<span class="text-green-400">2025-07-28 14:00:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="custom_workorder_zl">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-dark hover:bg-dark/80 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center">12</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-8 w-8 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                                <i class="fa fa-file-excel-o text-blue-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-white">委托备案数据与环保厅备案数据匹配情况统计表</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">基站环境保护全流程系统</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-light">星期三17:30更新，最近更新时间：<span class="text-green-400">2025-07-28 17:30:00</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="btn-outline text-xs py-1 px-3 download-btn" data-file="environment_order">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="bg-dark-light px-4 py-3 flex items-center justify-between border-t border-gray-dark sm:px-6">
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-mid">
+                                    显示第 <span class="font-medium">1</span> 到 <span class="font-medium">12</span> 条，共 <span class="font-medium">12</span> 条结果
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-dark bg-dark text-sm font-medium text-gray-mid hover:bg-dark-light">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-dark bg-primary text-sm font-medium text-white">
+                                        1
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-dark bg-dark text-sm font-medium text-gray-mid hover:bg-dark-light">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark-light py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex flex-col md:flex-row md:items-center">
+                    <i class="fa fa-server text-primary text-2xl mr-2"></i>
+                    <span class="font-bold text-xl text-white">运维管理系统</span>
+                    <p class="mt-2 md:mt-0 md:ml-4 text-sm text-gray-mid">© 2025 运维管理系统. 保留所有权利.</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-6">
+                    <a href="#" class="text-gray-mid hover:text-white transition-colors">
+                        <i class="fa fa-question-circle mr-1"></i> 帮助中心
+                    </a>
+                    <a href="#" class="text-gray-mid hover:text-white transition-colors">
+                        <i class="fa fa-book mr-1"></i> 文档
+                    </a>
+                    <a href="#" class="text-gray-mid hover:text-white transition-colors">
+                        <i class="fa fa-envelope mr-1"></i> 联系我们
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const nav = document.getElementById('mainNav');
+            if (window.scrollY > 10) {
+                nav.classList.add('bg-dark/95');
+                nav.classList.remove('bg-dark-light');
+            } else {
+                nav.classList.remove('bg-dark/95');
+                nav.classList.add('bg-dark-light');
+            }
+        });
+
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // 用户菜单切换
+        document.getElementById('user-menu-button').addEventListener('click', function() {
+            const userMenu = document.getElementById('user-menu');
+            userMenu.classList.toggle('hidden');
+        });
+
+        // 点击页面其他区域关闭菜单
+        document.addEventListener('click', function(event) {
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+
+            if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        // 为所有下载按钮绑定点击事件
+        document.querySelectorAll('.download-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const filename = this.getAttribute('data-file');
+                downloadFile(filename);
+            });
+        });
+
+        // 文件下载功能
+        function downloadFile(filename) {
+            // 显示加载状态
+            const button = event.currentTarget;
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> 下载中...';
+            button.disabled = true;
+
+            // 构建下载URL
+            const url = `/${filename}`;
+
+            // 使用fetch API请求文件
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('下载失败');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+
+                    // 从响应头获取文件名（如果有）
+                    const contentDisposition = response.headers.get('content-disposition');
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            a.download = filenameMatch[1];
+                        }
+                    }
+
+                    document.body.appendChild(a);
+                    a.click();
+
+                    // 清理
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+
+                    // 恢复按钮状态
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+
+                    // 显示下载成功提示
+                    showNotification('下载成功', 'success');
+                })
+                .catch(error => {
+                    console.error('下载出错:', error);
+                    alert('下载失败: ' + error.message);
+
+                    // 恢复按钮状态
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                });
+        }
+
+        // 显示通知提示
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 transform translate-y-20 opacity-0 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-primary text-white'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

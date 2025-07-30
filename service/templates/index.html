@@ -1,28 +1,401 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>下载</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运维管理系统 - 首页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#34d399',
+                        dark: '#0f172a',
+                        'dark-light': '#1e293b',
+                        'gray-light': '#e2e8f0',
+                        'gray-mid': '#94a3b8',
+                        'gray-dark': '#334155'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-dark {
+                background-image: linear-gradient(to right, rgba(79, 70, 229, 0.05), rgba(15, 23, 42, 0));
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .nav-link {
+                @apply relative px-3 py-2 text-gray-light hover:text-white transition-colors duration-200;
+            }
+            .nav-link::after {
+                @apply content-[''] absolute w-0 h-0.5 bg-primary left-0 bottom-0 transition-all duration-300;
+            }
+            .nav-link:hover::after {
+                @apply w-full;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+            }
+            .btn-outline {
+                @apply border border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-300;
+            }
+            .loading-spinner {
+                @apply inline-block w-5 h-5 border-2 border-gray-mid border-t-primary rounded-full animate-spin;
+            }
+        }
+    </style>
 </head>
-<body>
-    <p>下载前请仔细确认最后更新时间！！！</p>
-    <a href="/quxin_order_youji">工单及油机匹配率统计(每天09:00更新,最近更新时间：{{quxin_order_youji}})</a>
-    <p></p>
-    <a href="/quxin_yidong_offline">移动无运营商推送退服类告警统计(每天09:00更新,最近更新时间：{{quxin_yidong_offline}})</a>
-    <p></p>
-    <a href="/Interface_order">运营商接口工单(周一09:00更新,最近更新时间：{{Interface_order}})</a>
-    <p></p>
-    <a href="/environment_order">委托备案数据与环保厅备案数据匹配情况统计表(周三08:00更新，最近更新时间：{{environment_order}})</a>
-    <p></p>
-    <a href="/online_rate_order">智联设备平均在线率统计表(每天08:00更新,最近更新时间：{{online_rate_order}})</a>
-    <p></p>
-    <a href="/Custom_Workorder">智联工单处理情况(周三14:00更新,最近更新时间：{{Custom_Workorder}})</a>
-    <p></p>
-    <a href="/battery_order">开关电源电压设置修改情况通报(周一06:00更新,最近更新时间：{{battery_order}})</a>
-    <p></p>
-    <a href="/Signal_strength">物联卡信号强度(星期一09:30更新,最近更新时间：{{Signal_strength}})</a>
-    <p></p>
-    <a href="/Device_management">智联设备信息(星期三14:00更新,最近更新时间：{{Device_management}})</a>
-    <p></p>
+<body class="bg-dark text-gray-light min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-dark-light shadow-lg fixed w-full z-10 transition-all duration-300" id="mainNav">
+        <div class="max-width mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-server text-primary text-2xl mr-2"></i>
+                        <span class="font-bold text-xl text-white">运维管理系统</span>
+                    </a>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html" class="nav-link">首页</a>
+                        <a href="download.html" class="nav-link">文件下载</a>
+                        <a href="dashboard.html" class="nav-link">数据看板</a>
+                        <a href="settings.html" class="nav-link">系统设置</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="relative mr-4">
+                        <input type="text" placeholder="搜索..." class="bg-dark rounded-full py-1 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-40">
+                        <i class="fa fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-mid"></i>
+                    </div>
+                    <div class="relative ml-3">
+                        <div>
+                            <button type="button" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-primary" id="user-menu-button">
+                                <img class="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/id/1005/200/200" alt="用户头像">
+                            </button>
+                        </div>
+                        <div class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-dark-light ring-1 ring-black ring-opacity-5 focus:outline-none" id="user-menu" role="menu">
+                            <div class="py-1" role="none">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">个人资料</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">账号设置</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-red-400 hover:bg-red-900/30" role="menuitem">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-light hover:text-white hover:bg-dark focus:outline-none" id="mobile-menu-button">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 移动端菜单 -->
+        <div class="hidden sm:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary/20">首页</a>
+                <a href="download.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">文件下载</a>
+                <a href="dashboard.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">数据看板</a>
+                <a href="settings.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">系统设置</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-6">
+                <div class="bg-dark-light rounded-xl shadow-lg p-6 mb-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white mb-2">欢迎使用运维管理系统</h2>
+                            <p class="text-gray-mid">您可以在此查看系统状态、下载报表和管理设置</p>
+                        </div>
+                        <div class="mt-4 md:mt-0">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-900/20 text-green-400">
+                                <i class="fa fa-check-circle mr-1"></i> 系统正常运行中
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-primary/20 p-3 rounded-lg">
+                                    <i class="fa fa-file-excel-o text-primary text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-mid">今日报表</p>
+                                    <p class="text-xl font-bold text-white">15</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-blue-900/20 p-3 rounded-lg">
+                                    <i class="fa fa-bell text-blue-400 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-mid">活动告警</p>
+                                    <p class="text-xl font-bold text-white">3</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-yellow-900/20 p-3 rounded-lg">
+                                    <i class="fa fa-tasks text-yellow-400 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-mid">待处理工单</p>
+                                    <p class="text-xl font-bold text-white">8</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-purple-900/20 p-3 rounded-lg">
+                                    <i class="fa fa-users text-purple-400 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-mid">在线用户</p>
+                                    <p class="text-xl font-bold text-white">42</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-dark-light rounded-xl shadow-lg p-6 lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-white">系统状态</h3>
+                            <div class="text-sm text-gray-mid">最后更新: <span id="lastUpdateTime">2025-07-28 10:30:45</span></div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-gray-light">CPU 使用率</span>
+                                    <span class="text-sm font-medium text-green-400">32%</span>
+                                </div>
+                                <div class="w-full bg-dark rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 32%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-gray-light">内存使用率</span>
+                                    <span class="text-sm font-medium text-yellow-400">68%</span>
+                                </div>
+                                <div class="w-full bg-dark rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 68%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-gray-light">磁盘空间</span>
+                                    <span class="text-sm font-medium text-red-400">85%</span>
+                                </div>
+                                <div class="w-full bg-dark rounded-full h-2">
+                                    <div class="bg-red-500 h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-gray-light">网络流量</span>
+                                    <span class="text-sm font-medium text-blue-400">45%</span>
+                                </div>
+                                <div class="w-full bg-dark rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-dark-light rounded-xl shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-white">最近更新的文件</h3>
+                            <a href="download.html" class="text-sm text-primary hover:text-primary/80">查看全部</a>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
+                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
+                                    <i class="fa fa-file-excel-o text-primary"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-white">智联设备告警清单</p>
+                                    <p class="text-xs text-gray-mid">今天 00:00 更新</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
+                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
+                                    <i class="fa fa-file-excel-o text-primary"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-white">自定义工单-运营商业务类</p>
+                                    <p class="text-xs text-gray-mid">今天 06:00 更新</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
+                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
+                                    <i class="fa fa-file-excel-o text-primary"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-white">联通重复故障分析</p>
+                                    <p class="text-xs text-gray-mid">今天 06:30 更新</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
+                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
+                                    <i class="fa fa-file-excel-o text-primary"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-white">智联设备平均在线率统计表</p>
+                                    <p class="text-xs text-gray-mid">今天 08:00 更新</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-dark-light rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-white">快速访问</h3>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <a href="download.html" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
+                            <div class="bg-primary/20 p-3 rounded-full mb-2">
+                                <i class="fa fa-download text-primary text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-white">文件下载</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
+                            <div class="bg-blue-900/20 p-3 rounded-full mb-2">
+                                <i class="fa fa-bell text-blue-400 text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-white">告警管理</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
+                            <div class="bg-yellow-900/20 p-3 rounded-full mb-2">
+                                <i class="fa fa-tasks text-yellow-400 text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-white">工单管理</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
+                            <div class="bg-purple-900/20 p-3 rounded-full mb-2">
+                                <i class="fa fa-cog text-purple-400 text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-white">系统设置</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const nav = document.getElementById('mainNav');
+            if (window.scrollY > 10) {
+                nav.classList.add('shadow-xl');
+                nav.classList.add('bg-dark/95');
+                nav.classList.remove('bg-dark-light');
+            } else {
+                nav.classList.remove('shadow-xl');
+                nav.classList.remove('bg-dark/95');
+                nav.classList.add('bg-dark-light');
+            }
+        });
+
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // 用户菜单切换
+        document.getElementById('user-menu-button').addEventListener('click', function() {
+            const userMenu = document.getElementById('user-menu');
+            userMenu.classList.toggle('hidden');
+        });
+
+        // 点击页面其他地方关闭菜单
+        document.addEventListener('click', function(event) {
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+
+            if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target) && !mobileMenu.classList.contains('hidden')) {
+                if (!document.querySelector('#mobile-menu').contains(event.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            }
+        });
+
+        // 系统状态实时更新模拟
+        function updateSystemStatus() {
+            const cpuUsage = document.querySelector('div:nth-child(1) .bg-green-500');
+            const memUsage = document.querySelector('div:nth-child(2) .bg-yellow-500');
+            const diskUsage = document.querySelector('div:nth-child(3) .bg-red-500');
+            const netUsage = document.querySelector('div:nth-child(4) .bg-blue-500');
+
+            // 模拟随机变化
+            const newCpu = Math.max(25, Math.min(40, parseInt(cpuUsage.style.width) + Math.floor(Math.random() * 11) - 5));
+            const newMem = Math.max(60, Math.min(75, parseInt(memUsage.style.width) + Math.floor(Math.random() * 11) - 5));
+            const newNet = Math.max(35, Math.min(55, parseInt(netUsage.style.width) + Math.floor(Math.random() * 11) - 5));
+
+            cpuUsage.style.width = `${newCpu}%`;
+            memUsage.style.width = `${newMem}%`;
+            netUsage.style.width = `${newNet}%`;
+
+            // 更新百分比文本
+            document.querySelector('div:nth-child(1) .text-green-400').textContent = `${newCpu}%`;
+            document.querySelector('div:nth-child(2) .text-yellow-400').textContent = `${newMem}%`;
+            document.querySelector('div:nth-child(4) .text-blue-400').textContent = `${newNet}%`;
+
+            // 更新时间
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('lastUpdateTime').textContent = timeString;
+        }
+
+        // 每30秒更新一次系统状态
+        setInterval(updateSystemStatus, 30000);
+    </script>
 </body>
 </html>

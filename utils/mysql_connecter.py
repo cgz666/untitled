@@ -6,10 +6,9 @@ from config import IP_SERVICE
 import threading
 import pandas as pd
 class sql_orm():
-    def __init__(self,ip=IP_SERVICE,port='3306',database='tower',user='root',password='123456'):
+    def __init__(self, ip=IP_SERVICE, port='3306', database='tower', user='root', password='123456'):
         DB_URL = {
             'url': f'mysql+pymysql://{user}:{password}@{ip}:{port}/{database}?charset=utf8',  # 数据库
-            'encoding': 'utf-8',
             'pool_size': 24,
             'max_overflow': 20,
             'pool_recycle': 3600,
@@ -17,7 +16,7 @@ class sql_orm():
             'pool_pre_ping': True,
             'echo': False
         }
-        self.engine = create_engine(**DB_URL, query_cache_size=0)
+        self.engine = create_engine(DB_URL['url'], query_cache_size=0, **{k: v for k, v in DB_URL.items() if k != 'url'})
         self.Base = automap_base()
         self.Base.prepare(self.engine, reflect=True)
         self.Session = sessionmaker(bind=self.engine)

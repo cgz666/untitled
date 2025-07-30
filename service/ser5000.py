@@ -6,9 +6,10 @@ from utils.sql import sql_orm
 from flask_cors import CORS
 from config import FILES
 
-app = Flask(__name__, template_folder=r"F:\myvue\my-vue-app")
+app = Flask(__name__)  # 默认使用项目根目录下的 templates 文件夹
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 CORS(app, resources={r"/": {"origins": "http://localhost:5173"}})
+
 # MySQL 数据库配置
 DB_HOST = "10.19.6.250"
 DB_USER = "root"
@@ -40,6 +41,7 @@ def get_last_modified_time(filename):
     return result[0] if result else None
 
 @app.route('/')
+@app.route('/index.html')  # 添加对index.html的支持
 def index():
     # 假设 FILES 是一个包含文件名和路径的字典
     FILE = FILES
@@ -53,6 +55,22 @@ def index():
             'key': filename
         })
     return render_template('index.html', files=files)
+
+@app.route('/download.html')  # 添加对download.html的支持
+def download():
+    # 假设 FILES 是一个包含文件名和路径的字典
+    FILE = FILES
+    files = []
+    for filename, file_info in FILE.items():
+        last_modified = get_last_modified_time(filename)
+        files.append({
+            'name': filename,
+            'description': f"{filename} (最近更新时间：{last_modified})",
+            'last_modified': last_modified,
+            'key': filename
+        })
+    return render_template('download.html', files=files)
+
 
 @app.route('/quxin_order_youji', methods=['get'])
 def quxin_order_youji():

@@ -4,7 +4,7 @@ from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
 import pandas as pd
 class sql_orm():
-    def __init__(self, ip = '10.19.6.250', port = '3306', database = '自助取数', user = 'root', password = '123456'):
+    def __init__(self, ip='10.19.6.250', port='3306', database='自助取数', user='root', password='123456'):
         DB_URL = {
             'url': f'mysql+pymysql://{user}:{password}@{ip}:{port}/{database}?charset=utf8',  # 数据库
 

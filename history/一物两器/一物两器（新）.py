@@ -49,10 +49,10 @@ for file_path in os.listdir(INDEX):
         time.sleep(2)
         workbook_data.Close(SaveChanges=False)
 
-#
-# # FSU覆盖
+
+# FSU-统计表覆盖
 for file_path in os.listdir(INDEX):
-   if 'FSU覆盖稽核后统计表' in file_path:
+   if 'FSU-覆盖率-统计表' in file_path:
         data_file = os.path.join(INDEX, file_path)
         workbook_data = xl.Workbooks.Open(data_file)
         sheet_data = workbook_data.Sheets('sheet1')
@@ -66,23 +66,80 @@ for file_path in os.listdir(INDEX):
         time.sleep(2)
         workbook_data.Close(SaveChanges=False)
 
-
-# 微站监控覆盖
+# FSU-明细表覆盖
 for file_path in os.listdir(INDEX):
-   if 'FSU覆盖稽核后统计表' in file_path:
+   if 'FSU-覆盖率-明细表' in file_path:
+        data_file = os.path.join(INDEX, file_path)
+        workbook_data = xl.Workbooks.Open(data_file)
+        sheet_data = workbook_data.Sheets('sheet0')
+        sheet_main = workbook_main.Sheets('设备覆盖清单+FSU未覆盖清单')
+
+        # 获取数据表的总行数
+        last_row_data = sheet_data.UsedRange.Rows.Count
+
+        # 筛选J列和K列都为"否"的数据
+        sheet_data.Range("A1:L" + str(last_row_data)).AutoFilter(Field=10, Criteria1="否")  # J列是第10列
+        sheet_data.Range("A1:L" + str(last_row_data)).AutoFilter(Field=11, Criteria1="否")  # K列是第11列
+
+        # 复制筛选后的数据(A到L列)，不包括表头
+        filtered_range = sheet_data.Range("A2:L" + str(last_row_data)).SpecialCells(
+            win32.constants.xlCellTypeVisible)
+
+        # 清除主表N到Y列的数据(保留表头)
+        last_row_main = sheet_main.UsedRange.Rows.Count
+        if last_row_main > 1:
+            sheet_main.Range("N2:Y" + str(last_row_main)).ClearContents()
+
+        # 将复制的数据粘贴到主表N到Y列(从第二行开始)
+        if filtered_range.Areas.Count > 0:
+            filtered_range.Copy()
+            sheet_main.Range("N2").PasteSpecial(Paste=win32.constants.xlPasteValues)
+            xl.CutCopyMode = False  # 释放剪切板
+
+        # 移除筛选
+        sheet_data.AutoFilterMode = False
+
+        time.sleep(2)
+        workbook_data.Close(SaveChanges=False)
+
+# 微站监控-统计表覆盖
+for file_path in os.listdir(INDEX):
+   if 'FSU-微站监控覆盖-统计表' in file_path:
         data_file = os.path.join(INDEX, file_path)
         workbook_data = xl.Workbooks.Open(data_file)
         sheet_data = workbook_data.Sheets('sheet1')
         sheet_main = workbook_main.Sheets('设备覆盖率统计表+FSU覆盖+微站监控覆盖')
         sheet_data.AutoFilterMode = False  # 全局关闭筛选，保证复制的数据完全
-        source_range = sheet_data.Range('A1:AZ17')
-        target_range = sheet_main.Range('A24:AZ40')
+        source_range = sheet_data.Range('A1:S17')
+        target_range = sheet_main.Range('A44:S60')
         source_range.Copy()
         target_range.PasteSpecial(Paste=win32.constants.xlPasteValues)  # 使用值的形式粘贴
         xl.CutCopyMode = False  # 释放剪切板
         time.sleep(2)
         workbook_data.Close(SaveChanges=False)
 
+# 微站监控-明细表覆盖
+for file_path in os.listdir(INDEX):
+   if 'FSU-微站监控覆盖-明细表' in file_path:
+        data_file = os.path.join(INDEX, file_path)
+        workbook_data = xl.Workbooks.Open(data_file)
+        sheet_data = workbook_data.Sheets('sheet0')
+        sheet_main = workbook_main.Sheets('微站监控覆盖清单')
+        sheet_data.AutoFilterMode = False  # 全局关闭筛选，保证复制的数据完全
+        # 动态获取数据的实际范围
+        last_row = sheet_data.Cells(sheet_data.Rows.Count, 1).End(win32.constants.xlUp).Row
+        source_range = sheet_data.Range(f'A1:U{last_row}')  # 从A2开始复制
+        last_clear_row = sheet_main.UsedRange.Rows.Count
+        # 清空主工作表的所有数据，包括表头
+        if sheet_main.UsedRange.Rows.Count > 1:
+            sheet_main.UsedRange.ClearContents()
+        # 将数据复制到主工作表
+        source_range.Copy()
+        target_range = sheet_main.Range('A1')  # 从主工作表的A1单元格开始粘贴
+        target_range.PasteSpecial(Paste=win32.constants.xlPasteValues)  # 使用值的形式粘贴
+        xl.CutCopyMode = False  # 释放剪切板
+        time.sleep(2)
+        workbook_data.Close(SaveChanges=False)
 
 
 # 设备未覆盖清单+FSU未覆盖清单
@@ -107,7 +164,7 @@ for file_path in os.listdir(INDEX):
 
 # FSU未覆盖
 for file_path in os.listdir(INDEX):
-    if 'FSU覆盖明细表' in file_path:
+    if 'FSU-覆盖率-明细表' in file_path:
         data_file = os.path.join(INDEX, file_path)
         workbook_data = xl.Workbooks.Open(data_file)
         sheet_data = workbook_data.Sheets('sheet0')
@@ -274,9 +331,8 @@ for file_path in os.listdir(INDEX):
          time.sleep(2)
          workbook_data.Close(SaveChanges=False)
 
-#
-#
-# # 分路计量及远程抄表明细表
+
+# 分路计量及远程抄表明细表
 for file_path in os.listdir(INDEX):
     if '分路计量及远程抄表' in file_path:
          data_file = os.path.join(INDEX, file_path)
@@ -353,6 +409,29 @@ for file_path in os.listdir(INDEX):
 
         range_to_unmerge = sheet_main.Range('A1:U1')  # 根据实际需要调整范围
         range_to_unmerge.MergeCells = True
+        xl.CutCopyMode = False  # 释放剪切板
+        time.sleep(2)
+        workbook_data.Close(SaveChanges=False)
+
+# 设备信息长期离线
+for file_path in os.listdir(INDEX):
+   if '长期离线' in file_path:
+        data_file = os.path.join(INDEX, file_path)
+        workbook_data = xl.Workbooks.Open(data_file)
+        sheet_data = workbook_data.Sheets('sheet0')
+        sheet_main = workbook_main.Sheets('远程抄表长期离线')
+        sheet_data.AutoFilterMode = False  # 全局关闭筛选，保证复制的数据完全
+        # 动态获取数据的实际范围
+        last_row = sheet_data.Cells(sheet_data.Rows.Count, 1).End(win32.constants.xlUp).Row
+        source_range = sheet_data.Range(f'A1:V{last_row}')  # 从A2开始复制
+        last_clear_row = sheet_main.UsedRange.Rows.Count
+        # 清空主工作表的所有数据，包括表头
+        if sheet_main.UsedRange.Rows.Count > 1:
+            sheet_main.UsedRange.ClearContents()
+        # 将数据复制到主工作表
+        source_range.Copy()
+        target_range = sheet_main.Range('A1')  # 从主工作表的A1单元格开始粘贴
+        target_range.PasteSpecial(Paste=win32.constants.xlPasteValues)  # 使用值的形式粘贴
         xl.CutCopyMode = False  # 释放剪切板
         time.sleep(2)
         workbook_data.Close(SaveChanges=False)

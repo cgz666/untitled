@@ -12,14 +12,15 @@ from selenium.webdriver.common.by import By
 import openai
 import requests
 import json
+
+
 def ai_yzm(src):
     client = openai.OpenAI(
         api_key="sk-J4ndZW4RLXwrd32D40289e4dAdAc4306B4634cBbBcD5BdE7",
-        # base_url="https://quchi-llm-oneapi.runjian.com/v1"  # 公网地址
-        base_url="https://llm-oneapi.bytebroad.com.cn/v1"  # 或内网地址：
+        base_url="https://llm-oneapi.bytebroad.com.cn/v1"
     )
     response = client.chat.completions.create(
-        model="Qwen/Qwen2.5-VL-72B-Instruct",  # 当前私有化部署的多模态模型
+        model="Qwen/Qwen2.5-VL-72B-Instruct",
         messages=[
             {
                 "role": "user",
@@ -35,14 +36,14 @@ def ai_yzm(src):
     )
     return response.choices[0].message.content
 
+
 def ai_text(text):
     client = openai.OpenAI(
         api_key="sk-J4ndZW4RLXwrd32D40289e4dAdAc4306B4634cBbBcD5BdE7",
-        # base_url="https://quchi-llm-oneapi.runjian.com/v1"  # 公网地址
-        base_url="https://llm-oneapi.bytebroad.com.cn/v1"  # 或内网地址：
+        base_url="https://llm-oneapi.bytebroad.com.cn/v1"
     )
     response = client.chat.completions.create(
-        model="Qwen/Qwen2.5-VL-72B-Instruct",  # 当前私有化部署的多模态模型
+        model="Qwen/Qwen2.5-VL-72B-Instruct",
         messages=[
             {
                 "role": "user",
@@ -54,6 +55,7 @@ def ai_text(text):
         max_tokens=2000
     )
     return response.choices[0].message.content
+
 
 class main():
     def __init__(self):
@@ -82,8 +84,8 @@ class main():
         self.xls_path = os.path.join(INDEX, "xls")
         self.temp_path = os.path.join(INDEX, "temp")
         self.output_path = os.path.join(INDEX, "output")
-        self.account_path = os.path.join(self.xls_path, "环保厅账密.xlsx")  # 确保文件路径正确
-        self.white_list_path = os.path.join(self.xls_path, "白名单.xlsx")  # 确保文件路径正确
+        self.account_path = os.path.join(self.xls_path, "环保厅账密.xlsx")
+        self.white_list_path = os.path.join(self.xls_path, "白名单.xlsx")
         # 用户手动输入开始日期和结束日期
         self.start_date = self.get_user_input_date("请输入开始日期 (格式: YYYY-MM-DD): ")
         self.end_date = self.get_user_input_date("请输入结束日期 (格式: YYYY-MM-DD): ")
@@ -108,7 +110,7 @@ class main():
             return 1  # 在范围内
 
     def login(self, username, password):
-        """自动打开浏览器，使用指定的账号密码登录"""
+        """自动打开浏览器，使用指定的账号密码登录，验证码错误可无限重试，账号密码错误则跳过"""
         service = Service(executable_path=self.driver_path)
         option = webdriver.ChromeOptions()
         # option.add_argument('--headless')  # 如果需要无头模式，取消注释
@@ -116,11 +118,11 @@ class main():
         option.add_argument("--no-sandbox")
         option.binary_location = self.chrome_path
         driver = webdriver.Chrome(service=service, options=option)
-        max_attempts = 5  # 设置最大重试次数
-        attempts = 0
+        attempts = 0  # 仅用于计数显示，无实际限制作用
 
-        while attempts < max_attempts:
+        while True:  # 无限循环，直到登录成功或检测到账号密码错误
             try:
+                attempts += 1
                 # 打开登录页面
                 login_url = "https://beian.china-eia.com/a/login"
                 driver.get(login_url)
@@ -129,7 +131,7 @@ class main():
                     encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
                 src = f"data:image/png;base64,{encoded_string}"
                 res = ai_yzm(src)
-                print(f"验证码识别结果: {res}")
+                print(f"第 {attempts} 次尝试 - 验证码识别结果: {res}")
 
                 # 选择用户名登录方式
                 login_method_menu = driver.find_element(By.CSS_SELECTOR, ".select2-choice")
@@ -142,6 +144,10 @@ class main():
                 username_field = driver.find_element(By.ID, "username")
                 password_field = driver.find_element(By.ID, "password")
                 vcode_field = driver.find_element(By.ID, "validateCode")
+                # 清空输入框，避免重复输入
+                username_field.clear()
+                password_field.clear()
+                vcode_field.clear()
                 username_field.send_keys(username)
                 password_field.send_keys(password)
                 vcode_field.send_keys(res)
@@ -150,12 +156,31 @@ class main():
                 login_button = driver.find_element(By.ID, "denglu")
                 login_button.click()
 
-                # 等待登录完成
-                time.sleep(5)
+                # 等待登录完成和可能的错误提示
+                time.sleep(3)
+
+                # 检查是否有特定的错误提示
+                try:
+                    # 根据提供的HTML结构查找错误提示元素
+                    error_div = driver.find_element(By.ID, "jbox-content")
+                    error_text = error_div.text
+                    # 检查错误文本类型
+                    if "登录方式、用户名或密码错误" in error_text:
+                        print(f"登录失败: {error_text}，将跳过当前账号")
+                        driver.quit()
+                        return False  # 账号密码错误，返回失败，跳过当前账号
+                    elif "验证码错误" in error_text:
+                        print(f"第 {attempts} 次尝试 - 验证码错误: {error_text}，将重试")
+                        continue  # 验证码错误，继续循环重试
+                except:
+                    pass  # 没有错误提示，继续检查
+
+                # 再等待一会儿确保页面跳转完成
+                time.sleep(2)
 
                 # 检查是否登录成功
                 if driver.current_url == "https://beian.china-eia.com/a?login":
-                    print("登录成功")
+                    print(f"第 {attempts} 次尝试 - 登录成功")
                     cookies = driver.get_cookies()
                     session = requests.Session()
                     for cookie in cookies:
@@ -163,13 +188,11 @@ class main():
                     self.session = session
                     driver.quit()
                     return True
-            except Exception:
-                print("验证码错误")
-                attempts += 1
 
-        print("多次登录失败，退出程序")
-        driver.quit()
-        return False
+            except Exception as e:
+                print(f"第 {attempts} 次尝试 - 登录过程出错: {str(e)}，将重试")
+                # 出现其他异常也继续重试
+                time.sleep(2)  # 短暂等待后重试
 
     def gen_text(self, html_content, max_retries=3):
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -297,55 +320,75 @@ class main():
                 content_scale = soup.find('td', string=lambda t: t and '建设内容及规模' in t)
                 content_text = content_scale.find_next_sibling('td').get_text(strip=True)
                 if '备案详情：' in content_text:
-                    # 如果存在“备案详情：”，按此分隔
                     content_parts = content_text.split('备案详情：', 1)
                     result['建设内容及规模']['备案说明'] = content_parts[0].strip() + '。'
-                    content_details = content_parts[1].strip()  # 获取备案详情部分
+                    content_details = content_parts[1].strip()
                 else:
-                    # 如果不存在“备案详情：”，假设整个内容都是备案详情
-                    result['建设内容及规模']['备案说明'] = ''  # 备案说明为空
+                    result['建设内容及规模']['备案说明'] = ''
                     content_details = content_text.strip()
 
                 # 按回车符分割备案详情为列表
                 content_parts = content_details.split('\n')
 
+                # 更新AI提示语以处理两种站址名称
+                ai_prompt = """
+                处理上述文本，其内部有不同站址的信息，结果以列表格式返回。每条记录包含以下字段：
+                1. 铁塔站址名称：当行中包含"铁塔站址名称："前缀时，提取该前缀后的内容
+                2. 运营商站址名称：当行中包含"运营商站址名称："前缀时，提取该前缀后的内容
+                3. 铁塔站址编码：必须是45开头的18位纯数字或空值
+                4. 位置、经度、纬度：按原有方式提取
+
+                重要规则：
+                - 所有行都以序号开头（如"1、"）
+                - "铁塔站址名称："和"运营商站址名称："前缀只会出现在序号后面
+                - 当行中只有序号和站址信息时，整个站址信息作为运营商站址名称
+
+                结果格式：[{'铁塔站址名称':'', '运营商站址名称':'', '铁塔站址编码':'', '位置':'', '经度':'', '纬度':''}]
+                只返回JSON格式列表，不要包含其他内容。
+                """
+
                 # 分批处理备案详情
                 all_details = []
-                batch_size = 15  # 每批处理30行数据
+                batch_size = 15
 
                 for i in range(0, len(content_parts), batch_size):
-                    # 获取当前批次的数据
                     batch = content_parts[i:i + batch_size]
                     batch_text = '\n'.join(batch)
-
-                    # 处理当前批次，最多重试3次
                     max_ai_retries = 3
                     for attempt in range(max_ai_retries):
                         try:
-
                             # 调用AI接口
-                            ai_res = ai_text(
-                                batch_text + """处理上述文本,其内部有不同站址的信息，结果以[{'铁塔站址名称':'','铁塔站址编码':''注意：铁塔站址编码必须是45开头的18位纯数字或空值,'位置':'','经度':'','纬度':''}]列表格式返回，且每一条记录必须完整以{}返回,重复的也要保留重复记录，结果只返回json格式列表[]，[]外面不需要其他文字和多余字符""")
-
-                            # 清理AI返回内容
-                            cleaned_res = ai_res.strip()
-                            # 移除可能的markdown代码块标记
-                            if cleaned_res.startswith('```json'):
-                                cleaned_res = cleaned_res[len('```json'):].lstrip()
-                            elif cleaned_res.startswith('```'):
-                                cleaned_res = cleaned_res[len('```'):].lstrip()
-
-                            if cleaned_res.endswith('```'):
-                                cleaned_res = cleaned_res[:-len('```')].rstrip()
-
-                            # 确保以[]包裹
-                            if not cleaned_res.startswith('['):
-                                cleaned_res = '[' + cleaned_res
-                            if not cleaned_res.endswith(']'):
-                                cleaned_res = cleaned_res + ']'
-                            print(cleaned_res)
-                            # 解析JSON
+                            ai_res = ai_text(batch_text + ai_prompt)
+                            cleaned_res = self.clean_ai_response(ai_res)
                             batch_details = ast.literal_eval(cleaned_res)
+
+                            # 后处理：提取实际站址名称
+                            def extract_after_prefix(text, prefix):
+                                if prefix in text:
+                                    parts = text.split(prefix, 1)
+                                    # 提取前缀后的内容，并去除可能的后续分隔符
+                                    value = parts[1].split('，')[0].split('。')[0].strip()
+                                    return value
+                                return None
+
+                            # 处理提取到的每条记录
+                            for detail in batch_details:
+                                # 处理铁塔站址名称
+                                if detail.get('铁塔站址名称') and '铁塔站址名称：' in detail['铁塔站址名称']:
+                                    detail['铁塔站址名称'] = extract_after_prefix(detail['铁塔站址名称'], '铁塔站址名称：')
+
+                                # 处理运营商站址名称
+                                if detail.get('运营商站址名称') and '运营商站址名称：' in detail['运营商站址名称']:
+                                    detail['运营商站址名称'] = extract_after_prefix(detail['运营商站址名称'], '运营商站址名称：')
+
+                                # 处理只有序号和站址信息的情况
+                                if not detail.get('铁塔站址名称') and not detail.get('运营商站址名称'):
+                                    # 尝试从位置字段提取运营商站址名称
+                                    if '位置' in detail and detail['位置']:
+                                        # 位置字段的第一个部分通常是站址名称
+                                        location_parts = detail['位置'].split('，')
+                                        if location_parts:
+                                            detail['运营商站址名称'] = location_parts[0]
 
                             if isinstance(batch_details, list) and len(batch_details) > 0:
                                 all_details.extend(batch_details)
@@ -353,8 +396,6 @@ class main():
                                 break  # 成功则跳出重试循环
                             else:
                                 print(f"\n第{i // batch_size + 1}批AI返回无效数据，尝试重试 ({attempt + 1}/{max_ai_retries})")
-                                print(
-                                    f"解析结果类型: {type(batch_details)}, 长度: {len(batch_details) if isinstance(batch_details, list) else 0}")
 
                         except Exception as e:
                             print(f"\n第{i // batch_size + 1}批AI处理出错: {e}，尝试重试 ({attempt + 1}/{max_ai_retries})")
@@ -367,7 +408,8 @@ class main():
 
                 result['建设内容及规模']['备案详情'] = all_details
                 print(f"\n解析完成，共获取 {len(all_details)} 条备案详情")
-                return result, date_status  # 返回完整数据和日期状态
+                return result, date_status
+
             except Exception as e:
                 print(f"解析HTML内容时出错: {e}")
                 retries += 1
@@ -494,7 +536,7 @@ class main():
 
         while continue_flag:
             try:
-                id_dict, status = self.get_id_list(page)  # 现在只接收一个返回值
+                id_dict, status = self.get_id_list(page)
                 if not id_dict:  # 如果没有获取到数据，可能是最后一页
                     break
 
@@ -508,17 +550,24 @@ class main():
                         url=f"https://beian.china-eia.com/a/registrationform/tBasRegistrationForm/viewfront?id={obj_id}",
                         headers=self.headers,
                     )
+                    # 先获取填表日期信息用于输出
+                    soup = BeautifulSoup(res.text, 'html.parser')
+                    fill_date = soup.find('p', string=lambda t: t and '填表日期' in t)
+                    fill_date_str = fill_date.get_text(strip=True).replace('填表日期：', '') if fill_date else "未知日期"
+
+                    # 输出记录读取成功信息
+                    print(f"第{page}页的第{record_count}条记录读取成功，填表日期：{fill_date_str}")
+
+                    # 解析完整数据
                     df_data, date_flag = self.gen_text(res.text)
 
-                    # 修改后的输出语句，显示当前页的第几条记录
-                    print(f"第{page}页的第{record_count}条记录读取成功")
-
+                    # 根据日期判断结果输出对应信息
                     if date_flag == -1:
-                        print(f"项目 {obj_id} 的填表日期早于开始日期，停止爬取")
+                        print(f"填表日期早于开始日期，停止爬取")
                         continue_flag = False
                         break
                     elif date_flag == 0:
-                        print(f"项目 {obj_id} 的填表日期晚于结束日期，跳过此项目")
+                        print(f"填表日期晚于结束日期，跳过此项目")
                         continue
 
                     all_projects_data.append(df_data)
@@ -553,13 +602,15 @@ class main():
             # 创建DataFrame
             df = pd.DataFrame(expanded_rows)
 
-            # 重新排列列顺序（可选）
-            columns_order = ['填表日期', '项目名称', '建设地点', '建筑面积（平方米）',
-                             '建设单位', '法定代表人', '联系人', '联系电话',
-                             '项目投资（万元）', '环保投资（万元）', '拟投入生产运营日期',
-                             '建设性质', '备案依据',
-                             '铁塔站址名称', '铁塔站址编码', '位置', '经度', '纬度',
-                             '主要环境影响', '采取的环保措施及排放去向', '备案回执']
+            # 重新排列列顺序 - 添加新列
+            columns_order = [
+                '填表日期', '项目名称', '建设地点', '建筑面积（平方米）',
+                '建设单位', '法定代表人', '联系人', '联系电话',
+                '项目投资（万元）', '环保投资（万元）', '拟投入生产运营日期',
+                '建设性质', '备案依据',
+                '铁塔站址名称', '运营商站址名称', '铁塔站址编码', '位置', '经度', '纬度',
+                '主要环境影响', '采取的环保措施及排放去向', '备案回执'
+            ]
 
             # 只保留实际存在的列
             columns_order = [col for col in columns_order if col in df.columns]

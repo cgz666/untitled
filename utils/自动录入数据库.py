@@ -5,7 +5,6 @@ from sqlalchemy import inspect
 import numpy as np
 import pandas as pd
 
-
 def insert_into_sql(df, table_name):
     with sql_orm(database='自助取数').session_scope() as temp:
         session, Base = temp

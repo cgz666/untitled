@@ -5,7 +5,6 @@ import time
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
-
 class interface_result():
     def __init__(self):
         # 基础URL配置

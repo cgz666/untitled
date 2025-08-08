@@ -9,7 +9,6 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pickle
 
-
 class WeatherSpider:
     def __init__(self):
         self.base_url = "http://gx.weather.com.cn"

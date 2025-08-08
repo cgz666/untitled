@@ -127,7 +127,8 @@ class WeatherSpider:
                 alerts = self.parse_weather_alerts(link2_href)
 
             data = {
-                "广西": self.data_text+','+land_forecast,
+                "广西": self.data_text + ',' + land_forecast,
+                "其他地区": []  # 初始化 "其他地区" 键
             }
             # 为self.city_list中的每个城市初始化一个空列表
             for city in self.city_list:

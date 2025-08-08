@@ -8,7 +8,6 @@ import threading
 import shutil
 from queue import Queue
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 
 
 class device_alarms():

@@ -44,4 +44,4 @@ def ai_text(text):
     )
     return response.choices[0].message.content
 
-print(ai_yzm(""))
+print(ai_text("你好"))

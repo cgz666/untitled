@@ -1,401 +1,1521 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>运维管理系统 - 首页</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <title>文件下载</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-light: #818cf8;
+            --success-color: #34d399;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-alt: #273244;
+            --border-color: #334155;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --shadow-sm: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.2);
+            --shadow-hover: 0 5px 15px rgba(129, 140, 248, 0.3);
+            --transition-normal: all 0.3s ease;
+        }
 
-    <!-- Tailwind配置 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#4f46e5',
-                        secondary: '#34d399',
-                        dark: '#0f172a',
-                        'dark-light': '#1e293b',
-                        'gray-light': '#e2e8f0',
-                        'gray-mid': '#94a3b8',
-                        'gray-dark': '#334155'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: var(--transition-normal);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.1) 0%, rgba(15, 23, 42, 0) 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 标题区域 */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        /* 时间容器 */
+        .time-container {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            padding: 8px 15px;
+            background-color: rgba(15, 23, 42, 0.8);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 搜索和筛选区域 */
+        .search-filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-tag {
+            padding: 6px 12px;
+            border-radius: 20px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-tag.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .filter-tag:hover:not(.active) {
+            border-color: var(--primary-light);
+            color: var(--primary-light);
+        }
+
+        /* 提示文本 */
+        .download-note {
+            color: var(--text-secondary);
+            margin: 0 0 20px;
+            padding: 12px 15px;
+            background-color: rgba(79, 70, 229, 0.1);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-note i {
+            color: var(--primary-light);
+        }
+
+        /* 表格容器 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-card);
+            min-width: 800px;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        /* 序号列样式 */
+        th:first-child, td:first-child {
+            width: 60px;
+            text-align: center;
+        }
+
+        tr {
+            background-color: var(--bg-card);
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--bg-card-alt);
+        }
+
+        tr:hover {
+            background-color: rgba(79, 70, 229, 0.15);
+            transform: translateX(2px);
+        }
+
+        /* 文件信息样式 */
+        .file-name {
+            font-weight: 500;
+            position: relative;
+        }
+
+        .file-name:hover .file-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .file-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background-color: rgba(15, 23, 42, 0.9);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 10;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 5px;
+        }
+
+        .path-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* 时间样式 */
+        .update-time {
+            font-size: 14px;
+        }
+
+        .next-update {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* 按钮样式 */
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            background-color: transparent;
+            text-align: center;
+            gap: 5px;
+            border: none;
+        }
+
+        .btn-download {
+            color: var(--primary-light);
+            border: 1px solid var(--primary-light);
+        }
+
+        .btn-download:hover {
+            background-color: var(--primary-light);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-update {
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .btn-update:hover {
+            background-color: var(--success-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(52, 211, 153, 0.3);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(129, 140, 248, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-light);
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        /* 批量操作区域 */
+        .batch-operations {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .batch-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .batch-selected {
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .btn-batch-download {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            display: none;
+        }
+
+        .btn-batch-download.visible {
+            display: inline-flex;
+        }
+
+        .btn-batch-download:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* 动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 日期选择器样式优化 */
+        .date-range {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .date-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .date-input {
+            background-color: var(--bg-card-alt);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            flex-grow: 1;
+            max-width: 180px;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+        }
+
+        /* 日期选择器图标样式 */
+        .date-input::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .time-container {
+                align-self: flex-end;
+            }
+
+            th, td {
+                padding: 10px 8px;
+            }
+
+            .button {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .date-input {
+                max-width: 140px;
+                padding: 6px 10px;
+            }
+
+            .date-line {
+                font-size: 13px;
             }
         }
-    </script>
 
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .bg-gradient-dark {
-                background-image: linear-gradient(to right, rgba(79, 70, 229, 0.05), rgba(15, 23, 42, 0));
-            }
-            .card-hover {
-                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-            }
-            .nav-link {
-                @apply relative px-3 py-2 text-gray-light hover:text-white transition-colors duration-200;
-            }
-            .nav-link::after {
-                @apply content-[''] absolute w-0 h-0.5 bg-primary left-0 bottom-0 transition-all duration-300;
-            }
-            .nav-link:hover::after {
-                @apply w-full;
-            }
-            .btn-primary {
-                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
-            }
-            .btn-secondary {
-                @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
-            }
-            .btn-outline {
-                @apply border border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-300;
-            }
-            .loading-spinner {
-                @apply inline-block w-5 h-5 border-2 border-gray-mid border-t-primary rounded-full animate-spin;
-            }
+        /* 表格行动画延迟 */
+        table tr {
+            animation: slideUp 0.5s ease forwards;
+            opacity: 0;
         }
+
+        table tr:nth-child(1) { animation-delay: 0.05s; }
+        table tr:nth-child(2) { animation-delay: 0.1s; }
+        table tr:nth-child(3) { animation-delay: 0.15s; }
+        table tr:nth-child(4) { animation-delay: 0.2s; }
+        table tr:nth-child(5) { animation-delay: 0.25s; }
+        table tr:nth-child(6) { animation-delay: 0.3s; }
+        table tr:nth-child(7) { animation-delay: 0.35s; }
+        table tr:nth-child(8) { animation-delay: 0.4s; }
+        table tr:nth-child(9) { animation-delay: 0.45s; }
+        table tr:nth-child(10) { animation-delay: 0.5s; }
+        table tr:nth-child(11) { animation-delay: 0.55s; }
+        table tr:nth-child(12) { animation-delay: 0.6s; }
+        table tr:nth-child(13) { animation-delay: 0.65s; }
+        table tr:nth-child(14) { animation-delay: 0.7s; }
+        table tr:nth-child(15) { animation-delay: 0.75s; }
+        table tr:nth-child(16) { animation-delay: 0.8s; }
+        table tr:nth-child(17) { animation-delay: 0.85s; }
+        table tr:nth-child(18) { animation-delay: 0.90s; }
+        table tr:nth-child(19) { animation-delay: 0.95s; }
+        table tr:nth-child(20) { animation-delay: 1s; }
+        table tr:nth-child(21) { animation-delay: 1.05s; }
+        table tr:nth-child(22) { animation-delay: 1.1s; }
+        table tr:nth-child(23) { animation-delay: 1.15s; }
+        table tr:nth-child(24) { animation-delay: 1.2s; }
+        table tr:nth-child(25) { animation-delay: 1.25s; }
+        table tr:nth-child(26) { animation-delay: 1.3s; }
+        table tr:nth-child(27) { animation-delay: 1.35s; }
+        table tr:nth-child(28) { animation-delay: 1.4s; }
+        table tr:nth-child(29) { animation-delay: 1.45s; }
+        table tr:nth-child(30) { animation-delay: 1.5s; }
+        table tr:nth-child(31) { animation-delay: 1.55s; }
+        table tr:nth-child(32) { animation-delay: 1.6s; }
+        table tr:nth-child(33) { animation-delay: 1.65s; }
+        table tr:nth-child(34) { animation-delay: 1.7s; }
     </style>
 </head>
-<body class="bg-dark text-gray-light min-h-screen">
-    <!-- 导航栏 -->
-    <nav class="bg-dark-light shadow-lg fixed w-full z-10 transition-all duration-300" id="mainNav">
-        <div class="max-width mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="index.html" class="flex-shrink-0 flex items-center">
-                        <i class="fa fa-server text-primary text-2xl mr-2"></i>
-                        <span class="font-bold text-xl text-white">运维管理系统</span>
-                    </a>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="index.html" class="nav-link">首页</a>
-                        <a href="download.html" class="nav-link">文件下载</a>
-                        <a href="dashboard.html" class="nav-link">数据看板</a>
-                        <a href="settings.html" class="nav-link">系统设置</a>
-                    </div>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="time-container" id="current-time"></div>
+        </div>
+
+        <div class="search-filter-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="搜索文件名或路径...">
+            </div>
+            <div class="filter-tags">
+                <div class="filter-tag active" data-filter="all">
+                    <i class="fas fa-th"></i> 全部
                 </div>
-                <div class="flex items-center">
-                    <div class="relative mr-4">
-                        <input type="text" placeholder="搜索..." class="bg-dark rounded-full py-1 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-40">
-                        <i class="fa fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-mid"></i>
-                    </div>
-                    <div class="relative ml-3">
-                        <div>
-                            <button type="button" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-primary" id="user-menu-button">
-                                <img class="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/id/1005/200/200" alt="用户头像">
-                            </button>
-                        </div>
-                        <div class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-dark-light ring-1 ring-black ring-opacity-5 focus:outline-none" id="user-menu" role="menu">
-                            <div class="py-1" role="none">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">个人资料</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-light hover:bg-primary/20 hover:text-white" role="menuitem">账号设置</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-red-400 hover:bg-red-900/30" role="menuitem">退出登录</a>
-                            </div>
-                        </div>
-                    </div>
+                <div class="filter-tag" data-filter="daily">
+                    <i class="fas fa-sync-alt"></i> 每日更新
                 </div>
-                <div class="-mr-2 flex items-center sm:hidden">
-                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-light hover:text-white hover:bg-dark focus:outline-none" id="mobile-menu-button">
-                        <i class="fa fa-bars text-xl"></i>
-                    </button>
+                <div class="filter-tag" data-filter="weekly">
+                    <i class="fas fa-calendar-week"></i> 每周更新
+                </div>
+                <div class="filter-tag" data-filter="manual">
+                    <i class="fas fa-hand-pointer"></i> 手动更新
                 </div>
             </div>
         </div>
 
-        <!-- 移动端菜单 -->
-        <div class="hidden sm:hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary/20">首页</a>
-                <a href="download.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">文件下载</a>
-                <a href="dashboard.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">数据看板</a>
-                <a href="settings.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-light hover:text-white hover:bg-primary/10">系统设置</a>
-            </div>
+        <p class="download-note">
+            <i class="fas fa-info-circle"></i>
+            下载前请仔细确认最后更新时间，确保获取最新数据。
+        </p>
+
+        <div class="table-container">
+            <table>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>序号</th>
+                    <th>文件名</th>
+                    <th>路径</th>
+                    <th>更新信息</th>
+                    <th>操作</th>
+                </tr>
+                <!-- 以下为source.html中所有下载链接，已加服务器前缀 -->
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">地震局站点故障记录</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">实时更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/earthquake_log" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">基站直流负载总电流(包含上月和本月)</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{DC}}</div><div class="next-update">每天15:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/DC" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">站址管理信息</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{station}}</div><div class="next-update">每天01:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/station" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">站址管理信息(csv)</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{station}}</div><div class="next-update">每天01:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/station_csv" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">运营商别名</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{stationalias}}</div><div class="next-update">每天01:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/stationalias" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">性能查询-环境温度</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{temperature}}</div><div class="next-update">每天9:00、15:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/performence_wendu" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">能耗设备信息</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{nenghao_equiment_constitution}}</div><div class="next-update">每天14:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/nenghao_equiment_constitution" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">远程抄表设备长期离线</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{nenghao_lixian}}</div><div class="next-update">每天14:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/nenghao_lixian" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">fsu信息—所有</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{fsu_chaxun_all}}</div><div class="next-update">每天15:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/fsu_chaxun_all" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">fsu信息-今日离线统计</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{fsu_hafhour}}</div><div class="next-update">每半小时更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/fsu_hafhour" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">移动接口工单</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{yidong_api_order}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/yidong_api_order" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">隐患工单</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{yinhuan_order}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/yinhuan_order" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">本月离线类历史告警</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{lixian_now}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/lixian_now" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">上月离线类历史告警</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{lixian_last_month}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/lixian_last_month" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">本月门类历史告警</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{men_now}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/men_now" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">上月门类历史告警</td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td><div class="update-time">最近更新：{{men_last_month}}</div><div class="next-update">每天00:00更新</div></td>
+                    <td class="button-group"><a href="http://10.19.6.250:5000/men_last_month" class="button btn-download"><i class="fas fa-download"></i> 下载</a></td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        自定义工单-运营商业务类(带图片导出)
+                        <div class="file-tooltip">按照站址编码区分的运营商业务类自定义工单数据，包含图片导出</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{custom_workorder_yys_photo}}</div>
+                        <div class="next-update">每天06:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/custom_workorder_yys_photo" class="button btn-download" data-file="custom_workorder_yys_photo">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        联通重复故障分析
+                        <div class="file-tooltip">联通网络重复出现的故障分析通报下载</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{unicom_analysis}}</div>
+                        <div class="next-update">每天06:30更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/unicom_analysis" class="button btn-download" data-file="unicom_analysis">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        智联设备平均在线率统计表
+                        <div class="file-tooltip">智联设备每日在线情况统计，包含平均在线率分析</div>
+                    </td>
+                    <td><span class="path-tag">智联专业网管平台</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{online_rate_order}}</div>
+                        <div class="next-update">每天08:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/online_rate_order" class="button btn-download" data-file="online_rate_order">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        工单及油机匹配率统计
+                        <div class="file-tooltip">发电取信调度平台工单与油机资源匹配情况统计通报</div>
+                    </td>
+                    <td><span class="path-tag">发电取信调度平台</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{quxin_order_youji}}</div>
+                        <div class="next-update">每天09:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/quxin_order_youji" class="button btn-download" data-file="quxin_order_youji">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        移动无运营商推送退服类告警统计
+                        <div class="file-tooltip">移动网络中未被运营商推送的退服类告警统计分析通报</div>
+                    </td>
+                    <td><span class="path-tag">发电取信调度平台</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{quxin_yidong_offline}}</div>
+                        <div class="next-update">每天09:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/quxin_yidong_offline" class="button btn-download" data-file="quxin_yidong_offline">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        智联设备告警清单
+                        <div class="file-tooltip">智联专业网管平台监控到的设备告警详细清单</div>
+                    </td>
+                    <td><span class="path-tag">智联专业网管平台</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{device_alarms}}</div>
+                        <div class="next-update">每天10:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/device_alarms" class="button btn-download" data-file="device_alarms">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        故障监控
+                        <div class="file-tooltip">4A系统监控到的各类故障信息汇总清单</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{fault_monitoring}}</div>
+                        <div class="next-update">每天14:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/fault_monitoring" class="button btn-download" data-file="fault_monitoring">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="weekly" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        开关电源电压设置修改情况通报
+                        <div class="file-tooltip">包含均充、浮充、一级低压、二级低压设定值清单的开关电源电压设置修改情况通报</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{battery_order}}</div>
+                        <div class="next-update">星期一06:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/battery_order" class="button btn-download" data-file="battery_order">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="weekly" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        运营商接口工单
+                        <div class="file-tooltip">包含当前工单和历史工单的汇总清单通报</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{interface_order}}</div>
+                        <div class="next-update">星期一09:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/interface_order" class="button btn-download" data-file="interface_order">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="weekly" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        物联卡信号强度
+                        <div class="file-tooltip">统计各地市物联卡总数、信号强度通报</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{signal_strength}}</div>
+                        <div class="next-update">星期一09:30更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/signal_strength" class="button btn-download" data-file="signal_strength">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="weekly" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        智联工单处理情况
+                        <div class="file-tooltip">智联平台工单处理进度、完成率及超时统计通报</div>
+                    </td>
+                    <td><span class="path-tag">智联专业网管平台</span></td>
+                    <td>
+                        <div class="update-time">最近更新：{{custom_workorder_zl}}</div>
+                        <div class="next-update">星期三14:00更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/custom_workorder_zl" class="button btn-download" data-file="custom_workorder_zl">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+                <tr data-category="manual" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        委托备案数据与环保厅备案数据匹配情况统计表
+                        <div class="file-tooltip">委托备案数据与环保厅备案数据的比对和匹配分析通报</div>
+                    </td>
+                    <td><span class="path-tag">基站环境保护全流程系统</span></td>
+                    <td>
+                        <div class="update-time">
+                            最近更新：<span id="environment_order"><span class="loading"></span>加载中...</span>
+                        </div>
+                        <div class="next-update">手动点击更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/environment_order?action=download" class="button btn-download" data-file="environment_order">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                        <button class="button btn-update" data-file="/environment_order">
+                            <i class="fas fa-sync-alt"></i> 更新
+                        </button>
+                    </td>
+                </tr>
+                <tr data-category="manual" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        全站址直流电压
+                        <div class="file-tooltip">各站点直流电压监测数据，包含小时级变化趋势</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">
+                            最近更新：<span id="direct_current"><span class="loading"></span>加载中...</span>
+                        </div>
+                        <div class="next-update">手动点击更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/direct_current" class="button btn-download" data-file="direct_current">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                        <button class="button btn-update" data-file="/direct_current">
+                            <i class="fas fa-sync-alt"></i> 更新
+                        </button>
+                    </td>
+                </tr>
+                <tr data-category="manual" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        活动告警
+                        <div class="file-tooltip">包含全量状态告警数据和已派状态告警数据清单</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">
+                            最近更新：<span id="activity_alerts"><span class="loading"></span>加载中...</span>
+                        </div>
+                        <div class="next-update">手动点击更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/activity_alerts?action=download" class="button btn-download" data-file="activity_alerts">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                        <button class="button btn-update" data-file="/activity_alerts">
+                            <i class="fas fa-sync-alt"></i> 更新
+                        </button>
+                    </td>
+                </tr>
+                <tr data-category="manual" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        联通调度工单核实现场设备情况
+                        <div class="file-tooltip">联通调度工单现场核查的设备运行状态报告</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="update-time">
+                            最近更新：<span id="custom_workorder_yys"><span class="loading"></span>加载中...</span>
+                        </div>
+                        <div class="next-update">手动点击更新</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="/custom_workorder_yys?action=download" class="button btn-download" data-file="custom_workorder_yys">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                        <button class="button btn-update" data-file="/custom_workorder_yys">
+                            <i class="fas fa-sync-alt"></i> 更新
+                        </button>
+                    </td>
+                </tr>
+            <tr data-category="daily" class="auto-index-row">
+                <td><input type="checkbox" class="file-select"></td>
+                <td class="auto-index"></td>
+                    <td class="file-name">
+                        历史告警下载
+                        <div class="file-tooltip">可按日期和告警名称筛选的历史告警数据，生成单个XLSX文件</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="date-range">
+                            <div class="date-line">
+                                <label for="alarm-type-select">告警名称:</label>
+                                <select id="alarm-type-select" class="date-input" style="max-width:220px;">
+                                    <option value="温度过高告警">温度过高告警</option>
+                                    <option value="交流输入停电告警">交流输入停电告警</option>
+                                    <option value="门类">门类</option>
+                                    <option value="离线类">离线类</option>
+                                </select>
+                            </div>
+                            <div class="date-line">
+                                <label for="temp-start-date">开始日期:</label>
+                                <input type="date" id="temp-start-date" class="date-input">
+                            </div>
+                            <div class="date-line">
+                                <label for="temp-end-date">结束日期:</label>
+                                <input type="date" id="temp-end-date" class="date-input">
+                            </div>
+                        </div>
+                        <div class="next-update">选择日期范围在1年内</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="javascript:void(0);" class="button btn-download"
+                           data-file-type="temperature"
+                           data-start-id="temp-start-date"
+                           data-end-id="temp-end-date"
+                           data-alarm-select-id="alarm-type-select">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+
+                <tr data-category="daily" class="auto-index-row">
+                    <td><input type="checkbox" class="file-select"></td>
+                    <td class="auto-index"></td>
+                    <td class="file-name">
+                        一体化工单告警
+                        <div class="file-tooltip">按日期命名的一体化工单告警，格式为YYYYMMDD.zip，选择日期范围下载多个文件</div>
+                    </td>
+                    <td><span class="path-tag">4A运维监控系统</span></td>
+                    <td>
+                        <div class="date-range">
+                            <div class="date-line">
+                                <label for="report-start-date">开始日期:</label>
+                                <input type="date" id="report-start-date" class="date-input">
+                            </div>
+                            <div class="date-line">
+                                <label for="report-end-date">结束日期:</label>
+                                <input type="date" id="report-end-date" class="date-input">
+                            </div>
+                        </div>
+                        <div class="next-update">选择日期范围在15天内</div>
+                    </td>
+                    <td class="button-group">
+                        <a href="javascript:void(0);" class="button btn-download"
+                           data-file-type="report"
+                           data-start-id="report-start-date"
+                           data-end-id="report-end-date">
+                            <i class="fas fa-download"></i> 下载
+                        </a>
+                    </td>
+                </tr>
+            </table>
         </div>
-    </nav>
-
-    <!-- 主内容区 -->
-    <main class="pt-20 pb-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="py-6">
-                <div class="bg-dark-light rounded-xl shadow-lg p-6 mb-8">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-white mb-2">欢迎使用运维管理系统</h2>
-                            <p class="text-gray-mid">您可以在此查看系统状态、下载报表和管理设置</p>
-                        </div>
-                        <div class="mt-4 md:mt-0">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-900/20 text-green-400">
-                                <i class="fa fa-check-circle mr-1"></i> 系统正常运行中
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-primary/20 p-3 rounded-lg">
-                                    <i class="fa fa-file-excel-o text-primary text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-mid">今日报表</p>
-                                    <p class="text-xl font-bold text-white">15</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-blue-900/20 p-3 rounded-lg">
-                                    <i class="fa fa-bell text-blue-400 text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-mid">活动告警</p>
-                                    <p class="text-xl font-bold text-white">3</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-yellow-900/20 p-3 rounded-lg">
-                                    <i class="fa fa-tasks text-yellow-400 text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-mid">待处理工单</p>
-                                    <p class="text-xl font-bold text-white">8</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-dark rounded-lg p-4 shadow card-hover">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-purple-900/20 p-3 rounded-lg">
-                                    <i class="fa fa-users text-purple-400 text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-mid">在线用户</p>
-                                    <p class="text-xl font-bold text-white">42</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-dark-light rounded-xl shadow-lg p-6 lg:col-span-2">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-white">系统状态</h3>
-                            <div class="text-sm text-gray-mid">最后更新: <span id="lastUpdateTime">2025-07-28 10:30:45</span></div>
-                        </div>
-                        <div class="space-y-4">
-                            <div>
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm text-gray-light">CPU 使用率</span>
-                                    <span class="text-sm font-medium text-green-400">32%</span>
-                                </div>
-                                <div class="w-full bg-dark rounded-full h-2">
-                                    <div class="bg-green-500 h-2 rounded-full" style="width: 32%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm text-gray-light">内存使用率</span>
-                                    <span class="text-sm font-medium text-yellow-400">68%</span>
-                                </div>
-                                <div class="w-full bg-dark rounded-full h-2">
-                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 68%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm text-gray-light">磁盘空间</span>
-                                    <span class="text-sm font-medium text-red-400">85%</span>
-                                </div>
-                                <div class="w-full bg-dark rounded-full h-2">
-                                    <div class="bg-red-500 h-2 rounded-full" style="width: 85%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm text-gray-light">网络流量</span>
-                                    <span class="text-sm font-medium text-blue-400">45%</span>
-                                </div>
-                                <div class="w-full bg-dark rounded-full h-2">
-                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 45%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-dark-light rounded-xl shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-white">最近更新的文件</h3>
-                            <a href="download.html" class="text-sm text-primary hover:text-primary/80">查看全部</a>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
-                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
-                                    <i class="fa fa-file-excel-o text-primary"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-white">智联设备告警清单</p>
-                                    <p class="text-xs text-gray-mid">今天 00:00 更新</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
-                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
-                                    <i class="fa fa-file-excel-o text-primary"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-white">自定义工单-运营商业务类</p>
-                                    <p class="text-xs text-gray-mid">今天 06:00 更新</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
-                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
-                                    <i class="fa fa-file-excel-o text-primary"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-white">联通重复故障分析</p>
-                                    <p class="text-xs text-gray-mid">今天 06:30 更新</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2 hover:bg-dark rounded-lg transition-colors">
-                                <div class="flex-shrink-0 bg-primary/20 p-2 rounded-lg">
-                                    <i class="fa fa-file-excel-o text-primary"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-white">智联设备平均在线率统计表</p>
-                                    <p class="text-xs text-gray-mid">今天 08:00 更新</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 bg-dark-light rounded-xl shadow-lg p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-white">快速访问</h3>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <a href="download.html" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
-                            <div class="bg-primary/20 p-3 rounded-full mb-2">
-                                <i class="fa fa-download text-primary text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-white">文件下载</span>
-                        </a>
-                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
-                            <div class="bg-blue-900/20 p-3 rounded-full mb-2">
-                                <i class="fa fa-bell text-blue-400 text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-white">告警管理</span>
-                        </a>
-                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
-                            <div class="bg-yellow-900/20 p-3 rounded-full mb-2">
-                                <i class="fa fa-tasks text-yellow-400 text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-white">工单管理</span>
-                        </a>
-                        <a href="#" class="flex flex-col items-center justify-center p-4 bg-dark rounded-lg hover:bg-primary/10 transition-colors card-hover">
-                            <div class="bg-purple-900/20 p-3 rounded-full mb-2">
-                                <i class="fa fa-cog text-purple-400 text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-white">系统设置</span>
-                        </a>
-                    </div>
-                </div>
+        <div class="batch-operations">
+            <div class="batch-info">
+                已选择 <span class="batch-selected" id="selected-count">0</span> 个文件
             </div>
+            <button class="button btn-batch-download" id="batch-download-btn">
+                <i class="fas fa-download"></i> 批量下载
+            </button>
         </div>
-    </main>
+    </div>
 
     <script>
-        // 导航栏滚动效果
-        window.addEventListener('scroll', function() {
-            const nav = document.getElementById('mainNav');
-            if (window.scrollY > 10) {
-                nav.classList.add('shadow-xl');
-                nav.classList.add('bg-dark/95');
-                nav.classList.remove('bg-dark-light');
-            } else {
-                nav.classList.remove('shadow-xl');
-                nav.classList.remove('bg-dark/95');
-                nav.classList.add('bg-dark-light');
-            }
-        });
-
-        // 移动端菜单切换
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
-        });
-
-        // 用户菜单切换
-        document.getElementById('user-menu-button').addEventListener('click', function() {
-            const userMenu = document.getElementById('user-menu');
-            userMenu.classList.toggle('hidden');
-        });
-
-        // 点击页面其他地方关闭菜单
-        document.addEventListener('click', function(event) {
-            const userMenuButton = document.getElementById('user-menu-button');
-            const userMenu = document.getElementById('user-menu');
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-
-            if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
-                userMenu.classList.add('hidden');
-            }
-
-            if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target) && !mobileMenu.classList.contains('hidden')) {
-                if (!document.querySelector('#mobile-menu').contains(event.target)) {
-                    mobileMenu.classList.add('hidden');
+        // 自动编号所有序号列
+        function autoIndexRows() {
+            const rows = document.querySelectorAll('tr.auto-index-row');
+            let idx = 1;
+            rows.forEach(row => {
+                const indexCell = row.querySelector('.auto-index');
+                if (indexCell) {
+                    indexCell.textContent = idx++;
                 }
-            }
-        });
-
-        // 系统状态实时更新模拟
-        function updateSystemStatus() {
-            const cpuUsage = document.querySelector('div:nth-child(1) .bg-green-500');
-            const memUsage = document.querySelector('div:nth-child(2) .bg-yellow-500');
-            const diskUsage = document.querySelector('div:nth-child(3) .bg-red-500');
-            const netUsage = document.querySelector('div:nth-child(4) .bg-blue-500');
-
-            // 模拟随机变化
-            const newCpu = Math.max(25, Math.min(40, parseInt(cpuUsage.style.width) + Math.floor(Math.random() * 11) - 5));
-            const newMem = Math.max(60, Math.min(75, parseInt(memUsage.style.width) + Math.floor(Math.random() * 11) - 5));
-            const newNet = Math.max(35, Math.min(55, parseInt(netUsage.style.width) + Math.floor(Math.random() * 11) - 5));
-
-            cpuUsage.style.width = `${newCpu}%`;
-            memUsage.style.width = `${newMem}%`;
-            netUsage.style.width = `${newNet}%`;
-
-            // 更新百分比文本
-            document.querySelector('div:nth-child(1) .text-green-400').textContent = `${newCpu}%`;
-            document.querySelector('div:nth-child(2) .text-yellow-400').textContent = `${newMem}%`;
-            document.querySelector('div:nth-child(4) .text-blue-400').textContent = `${newNet}%`;
-
-            // 更新时间
-            const now = new Date();
-            const timeString = now.toLocaleString('zh-CN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
             });
-            document.getElementById('lastUpdateTime').textContent = timeString;
         }
 
-        // 每30秒更新一次系统状态
-        setInterval(updateSystemStatus, 30000);
+        // 页面加载后自动编号
+        window.addEventListener('DOMContentLoaded', () => {
+            autoIndexRows();
+        });
+        // 如果有动态增删行，也可以在相关操作后调用 autoIndexRows()
+        // 1. 当前时间显示模块
+        const CurrentTimeModule = {
+            init() {
+                this.updateCurrentTime();
+                setInterval(() => this.updateCurrentTime(), 1000);
+            },
+            updateCurrentTime() {
+                const now = new Date();
+                document.getElementById('current-time').textContent = now.toLocaleString();
+            }
+        };
+
+        // 2. 文件时间管理模块
+        const FileTimeModule = {
+            files: [
+                { id: 'environment_order', url: '/environment_order' },
+                { id: 'direct_current', url: '/direct_current' },
+                { id: 'activity_alerts', url: '/activity_alerts' },
+                { id: 'custom_workorder_yys', url: '/custom_workorder_yys' }
+            ],
+
+            init() {
+                this.refreshAllFileTimes();
+            },
+
+            refreshAllFileTimes() {
+                this.files.forEach(file => this.refreshSingleFileTime(file));
+            },
+
+            refreshSingleFileTime(file) {
+                fetch(file.url, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            const modifyTime = response.headers.get('X-Modify-Time');
+                            const timeElement = document.getElementById(file.id);
+                            if (modifyTime) {
+                                const date = new Date(parseFloat(modifyTime) * 1000);
+                                timeElement.innerHTML = !isNaN(date.getTime())
+                                    ? date.toLocaleString()
+                                    : '时间格式错误';
+                            } else {
+                                timeElement.innerHTML = '未获取到时间';
+                            }
+                        } else {
+                            document.getElementById(file.id).innerHTML = '获取失败';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById(file.id).innerHTML = '请求异常';
+                    });
+            }
+        };
+
+        // 3. 更新操作模块
+        const UpdateOperationModule = {
+            directCurrentConfig: {
+                url: 'http://10.19.6.250:5002/download',
+                params: {
+                    'cities': ['0099977','0099978','0099979', '0099980', '0099981', '0099982', '0099983', '0099984',
+                               '0099985', '0099986', '0099987', '0099988', '0099989', '0099990'],
+                    'search_id': '0406111001',
+                    'folder_temp': 'F:\\newtowerV2\\websource\\spider_download\\Comprehensive_query\\直流电压直流负载总电流\\temp1',
+                    'out_put': 'F:\\newtowerV2\\websource\\spider_download\\Comprehensive_query\\直流电压直流负载总电流\\直流电压\\全站址直流电压.xlsx',
+                    'hours': 24,
+                    'content_len': 102400,
+                    'cookie_user': '1'
+                }
+            },
+            environmentOrderConfig: {
+                url: '/environment_order?action=update'
+            },
+
+            activityAlertsConfig: {
+                url: '/activity_alerts?action=update'
+            },
+
+            customWorkorderYysConfig: {
+                url: '/custom_workorder_yys?action=update'
+            },
+
+            init() {
+                this.bindUpdateButtons();
+                // 移除下载按钮状态处理
+            },
+
+            bindUpdateButtons() {
+                document.querySelectorAll('.btn-update').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleUpdate(e));
+                });
+            },
+
+            handleUpdate(event) {
+                const btn = event.currentTarget;
+                const fileId = btn.getAttribute('data-file').replace('/', '');
+
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 更新中...`;
+
+                let updatePromise;
+                if (fileId === 'direct_current') {
+                    updatePromise = this.updateDirectCurrent();
+                } else if (fileId === 'activity_alerts') {
+                    updatePromise = this.updateActivityAlerts();
+                } else if (fileId === 'custom_workorder_yys') {
+                    updatePromise = this.updateCustomWorkorderYys();
+                } else if (fileId === 'environment_order') {
+                    updatePromise = this.updateEnvironmentOrder();
+                } else {
+                    console.error('未知的文件ID:', fileId);
+                    updatePromise = Promise.reject(new Error('未知的文件ID'));
+                }
+
+                updatePromise
+                    .finally(() => {
+                        alert('开始更新，请稍后再下载');
+                        setTimeout(() => {
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                        }, 5 * 60 * 1000);
+                        const targetFile = FileTimeModule.files.find(f => f.id === fileId);
+                        if (targetFile) FileTimeModule.refreshSingleFileTime(targetFile);
+                    });
+            },
+
+            updateDirectCurrent() {
+                const { url, params } = this.directCurrentConfig;
+                return fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                }).catch(err => {
+                    console.error('直流电压更新请求失败：', err);
+                });
+            },
+
+            updateEnvironmentOrder() {
+                const { url } = this.environmentOrderConfig;
+                return fetch(url, { method: 'GET' })
+                    .catch(err => {
+                        console.error('环保厅备案更新失败：', err);
+                    });
+            },
+
+            updateActivityAlerts() {
+                const { url } = this.activityAlertsConfig;
+                return fetch(url, { method: 'GET' })
+                    .catch(err => {
+                        console.error('活动告警更新失败：', err);
+                    });
+            },
+
+            updateCustomWorkorderYys() {
+                const { url } = this.customWorkorderYysConfig;
+                return fetch(url, { method: 'GET' })
+                    .catch(err => {
+                        console.error('自定义工单更新失败：', err);
+                    });
+            }
+        };
+
+        // 4. 搜索和筛选模块
+        const SearchFilterModule = {
+            init() {
+                this.bindSearchInput();
+                this.bindFilterTags();
+            },
+
+            bindSearchInput() {
+                const searchInput = document.getElementById('search-input');
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    this.filterTable(searchTerm);
+                });
+            },
+
+            bindFilterTags() {
+                document.querySelectorAll('.filter-tag').forEach(tag => {
+                    tag.addEventListener('click', (e) => {
+                        // 更新活跃状态
+                        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                        e.target.classList.add('active');
+
+                        const filter = e.target.getAttribute('data-filter');
+                        this.applyCategoryFilter(filter);
+                    });
+                });
+            },
+
+            filterTable(searchTerm) {
+                const rows = document.querySelectorAll('table tr:not(:first-child)');
+                rows.forEach(row => {
+                    const fileName = row.querySelector('.file-name').textContent.toLowerCase();
+                    const path = row.querySelector('.path-tag').textContent.toLowerCase();
+
+                    const matchesSearch = fileName.includes(searchTerm) || path.includes(searchTerm);
+                    const matchesFilter = this.checkCategoryFilter(row);
+
+                    row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+                });
+            },
+
+            applyCategoryFilter(filter) {
+                localStorage.setItem('activeFilter', filter);
+                this.filterTable(document.getElementById('search-input').value.toLowerCase().trim());
+            },
+
+            checkCategoryFilter(row) {
+                const activeFilter = localStorage.getItem('activeFilter') || 'all';
+                if (activeFilter === 'all') return true;
+
+                const rowCategory = row.getAttribute('data-category');
+                return rowCategory === activeFilter;
+            }
+        };
+
+        // 5. 批量选择和下载模块
+        const BatchOperationsModule = {
+            init() {
+                this.bindSelectAllCheckbox();
+                this.bindFileSelectCheckboxes();
+                this.bindBatchDownloadButton();
+            },
+
+            bindSelectAllCheckbox() {
+                const selectAll = document.getElementById('select-all');
+                selectAll.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    document.querySelectorAll('.file-select').forEach(checkbox => {
+                        // 只选中可见行
+                        const row = checkbox.closest('tr');
+                        if (row.style.display !== 'none') {
+                            checkbox.checked = isChecked;
+                        }
+                    });
+                    this.updateSelectedCount();
+                });
+            },
+
+            bindFileSelectCheckboxes() {
+                document.querySelectorAll('.file-select').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        this.updateSelectedCount();
+
+                        // 更新全选框状态
+                        const allChecked = document.querySelectorAll('.file-select:checked').length ===
+                                          document.querySelectorAll('.file-select:not(:disabled)').length;
+                        document.getElementById('select-all').checked = allChecked;
+                    });
+                });
+            },
+
+            bindBatchDownloadButton() {
+                document.getElementById('batch-download-btn').addEventListener('click', () => {
+                    const selectedFiles = this.getSelectedFiles();
+                    if (selectedFiles.length === 0) return;
+
+                    alert(`即将开始下载 ${selectedFiles.length} 个文件`);
+
+                    // 批量下载不显示状态，直接触发下载
+                    selectedFiles.forEach((file, index) => {
+                        setTimeout(() => {
+                            const link = document.createElement('a');
+                            link.href = file.downloadUrl;
+                            link.click();
+                        }, index * 1000); // 每个文件间隔1秒下载
+                    });
+                });
+            },
+
+            updateSelectedCount() {
+                const count = document.querySelectorAll('.file-select:checked').length;
+                document.getElementById('selected-count').textContent = count;
+
+                // 显示/隐藏批量下载按钮
+                const batchBtn = document.getElementById('batch-download-btn');
+                if (count > 0) {
+                    batchBtn.classList.add('visible');
+                } else {
+                    batchBtn.classList.remove('visible');
+                }
+            },
+
+            getSelectedFiles() {
+                const selected = [];
+                document.querySelectorAll('.file-select:checked').forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const downloadBtn = row.querySelector('.btn-download');
+                    selected.push({
+                        name: row.querySelector('.file-name').textContent.trim(),
+                        downloadUrl: downloadBtn.getAttribute('href')
+                    });
+                });
+                return selected;
+            }
+        };
+        // 6.通用日期范围下载模块
+        const DateRangeDownloadModule = {
+            // 配置不同类型文件的下载参数，明确区分文件类型和格式
+            fileConfigs: {
+                temperature: {
+                    // 新增：历史告警下载接口，带告警类型参数
+                    urlTemplate: 'http://10.19.6.250:5000/down_alarm_history?begin={start}&end={end}&alarm={alarm}',
+                    fileNameTemplate: 'alarm_history_{alarm}_{start}_to_{end}.xlsx',
+                    maxDays: 365,
+                    description: '历史告警下载',
+                    fileType: 'XLSX'
+                },
+                report: {
+                    urlTemplate: '/files/{date}.zip',
+                    fileNameTemplate: '{date}.zip',
+                    dateFormat: 'YYYYMMDD',
+                    maxDays: 15,
+                    description: '一体化工单告警',
+                    fileType: 'ZIP'
+                }
+            },
+
+            init() {
+                // 设置默认日期范围为最近昨天
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                const defaultStart = yesterday.toISOString().split('T')[0];
+                const defaultEnd = yesterday.toISOString().split('T')[0];
+
+                // 为所有日期范围选择器设置默认值
+                document.querySelectorAll('.date-range').forEach(range => {
+                    const startInput = range.querySelector('.date-line input[type="date"]');
+                    const endInput = range.querySelector('.date-line:last-child input[type="date"]');
+                    if (startInput && endInput) {
+                        startInput.value = defaultStart;
+                        endInput.value = defaultEnd;
+                    }
+                });
+
+                // 绑定所有下载按钮事件
+                document.querySelectorAll('.btn-download[data-file-type]').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleDownload(e));
+                });
+            },
+
+            // 处理下载请求
+            handleDownload(event) {
+                const btn = event.currentTarget;
+                const fileType = btn.getAttribute('data-file-type');
+                const startId = btn.getAttribute('data-start-id');
+                const endId = btn.getAttribute('data-end-id');
+                const alarmSelectId = btn.getAttribute('data-alarm-select-id');
+
+                // 获取日期输入值
+                const startDateStr = document.getElementById(startId).value;
+                const endDateStr = document.getElementById(endId).value;
+
+                // 获取告警类型
+                let alarmType = '';
+                if (alarmSelectId) {
+                    const select = document.getElementById(alarmSelectId);
+                    alarmType = select ? select.value : '';
+                }
+
+                // 验证日期
+                if (!startDateStr || !endDateStr) {
+                    alert('请选择开始日期和结束日期');
+                    return;
+                }
+
+                const startDate = new Date(startDateStr);
+                const endDate = new Date(endDateStr);
+
+                if (startDate > endDate) {
+                    alert('开始日期不能晚于结束日期');
+                    return;
+                }
+
+                // 获取配置
+                const config = this.fileConfigs[fileType];
+                if (!config) {
+                    alert('未找到文件类型配置');
+                    return;
+                }
+
+                // 计算日期范围内的天数
+                const timeDiff = endDate - startDate;
+                const dayCount = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+                // 检查是否超过最大天数限制
+                if (dayCount > config.maxDays) {
+                    alert(`最多只能选择${config.maxDays}天范围内的${config.description}文件进行下载`);
+                    return;
+                }
+
+                // 根据文件类型显示不同的提示信息
+                if (fileType === 'temperature') {
+                    alert(`即将生成并下载包含${dayCount}天数据的${config.fileType}文件`);
+                } else {
+                    alert(`即将下载${dayCount}个${config.description}(${config.fileType}格式)`);
+                }
+
+                // 根据文件类型执行不同的下载策略
+                if (fileType === 'report') {
+                    this.downloadDailyReports(config, startDate, endDate);
+                } else {
+                    this.downloadFilteredDataFile(config, startDateStr, endDateStr, alarmType);
+                }
+            },
+
+            // 下载每日报告（多个ZIP文件）
+            downloadDailyReports(config, startDate, endDate) {
+                let currentDate = new Date(startDate);
+                let delay = 0;
+
+                while (currentDate <= endDate) {
+                    // 格式化日期为YYYYMMDD
+                    const year = currentDate.getFullYear();
+                    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(currentDate.getDate()).padStart(2, '0');
+                    const dateStr = `${year}${month}${day}`;
+
+                    // 替换模板中的占位符
+                    const url = config.urlTemplate.replace('{date}', dateStr);
+                    const fileName = config.fileNameTemplate.replace('{date}', dateStr);
+
+                    // 延迟下载，避免同时请求过多
+                    setTimeout(() => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        console.log(`下载文件: ${fileName}`);
+                    }, delay);
+
+                    // 增加一天
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    delay += 1000; // 每个文件间隔1秒
+                }
+            },
+
+            // 下载筛选数据文件（单个XLSX文件）
+            downloadFilteredDataFile(config, startDate, endDate, alarmType) {
+                // 替换模板中的占位符
+                let url = config.urlTemplate
+                    .replace('{start}', startDate)
+                    .replace('{end}', endDate)
+                    .replace('{alarm}', encodeURIComponent(alarmType || ''));
+
+                let fileName = config.fileNameTemplate
+                    .replace('{start}', startDate)
+                    .replace('{end}', endDate)
+                    .replace('{alarm}', alarmType || '');
+
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
+        // 初始化所有模块
+        window.onload = () => {
+            CurrentTimeModule.init();
+            FileTimeModule.init();
+            UpdateOperationModule.init();
+            SearchFilterModule.init();
+            BatchOperationsModule.init();
+            DateRangeDownloadModule.init(); // 使用修改后的通用下载模块
+            autoIndexRows(); // 保证所有模块初始化后再编号
+        };
     </script>
 </body>
 </html>
+

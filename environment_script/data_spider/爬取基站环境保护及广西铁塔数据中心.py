@@ -379,21 +379,6 @@ class ExcelDataProcessor():
 
                         ws.DisplayPageBreaks = False
 
-                        # 删除指定列
-                        # if input_file == self.file_name1 and columns_to_delete:
-                        #     print(f"正在删除列: {', '.join(columns_to_delete)}")
-                        #     header_row = ws.Rows(1)
-                        #     col_indices = {
-                        #         header_row.Cells(col).Value: col
-                        #         for col in range(1, ws.UsedRange.Columns.Count + 1)
-                        #     }
-                        #     cols_to_delete = [
-                        #         col_indices[col_name] for col_name in columns_to_delete
-                        #         if col_name in col_indices
-                        #     ]
-                        #     for col_idx in sorted(cols_to_delete, reverse=True):
-                        #         ws.Columns(col_idx).Delete()
-                        #     print(f"已成功删除 {len(cols_to_delete)} 列")
 
                         # 定位日期列
                         header_values = [ws.Cells(1, col).Value for col in range(1, ws.UsedRange.Columns.Count + 1)]
